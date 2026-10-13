@@ -48,6 +48,17 @@ switch (result) {
 - A hosted attribution service. This plugin reads what the platform
   gives you, and nothing else.
 
+## Contributing
+
+Issues and pull requests are welcome — especially device reports
+("Play returned X on <OEM> Android N"), since referrer behaviour varies by
+vendor and Play Store version.
+
+## Support
+
+If this plugin saved you a day of chasing referrers, a ⭐ on the repository
+helps other Flutter developers find it.
+
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT © saimskywalker. See [LICENSE](LICENSE).
