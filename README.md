@@ -1,58 +1,300 @@
-# install_attribution
+# imaji_install_attribution — Play Install Referrer & Apple AdServices for Flutter
 
-> Status: **pre-alpha, not published.** The API below is the design target;
-> nothing is implemented yet. Progress is tracked in the issues.
+A Flutter plugin that answers one question on Android and iOS: **where did
+this install come from?** — and turns the answer into the deep link the user
+was trying to open before they installed (a *deferred deep link*).
 
-A Flutter plugin that answers one question on both platforms: **where did
-this install come from?**
+- **Android:** reads the Google Play Install Referrer.
+- **iOS:** reads the Apple AdServices attribution token (Apple Ads).
+- **Dart:** one typed result — `Attributed`, `Organic` or
+  `Unavailable(reason)` — from a `read()` that never throws.
+- **Built on AGP Built-in Kotlin.** No Kotlin Gradle Plugin line in any build
+  file, so Flutter's *"Your app uses the following plugins that apply Kotlin
+  Gradle Plugin (KGP)"* warning never names this plugin.
 
-- **Android** reads the Google Play Install Referrer.
-- **iOS** reads the AdServices attribution token (Apple Search Ads).
-- Both return one typed result, and a helper turns the referrer into the
-  deep link the user was trying to reach before they installed.
+> Status: 0.1.0, pre-release. Not on pub.dev yet; depend on it from Git for
+> now (see [Install](#install)).
 
-## Why another referrer plugin
+## Why this exists
 
-The existing Play Install Referrer plugins share a few problems:
+Firebase Dynamic Links has been shut down, and with it the easy way to carry
+a link through an app-store install. What is left is the platform itself:
+the Play Install Referrer on Android and the AdServices token on iOS. The
+existing Flutter referrer plugins share a few problems:
 
-| Problem | What this plugin does instead |
+| Problem | What this plugin does |
 |---|---|
-| The Kotlin Gradle Plugin is applied in the build file, which Flutter warns will fail on future releases (AGP 9 Built-in Kotlin) | Built-in Kotlin from day one. No KGP line anywhere |
-| The Binder call to the Play Store service runs on the platform thread, so a slow Play service can freeze the app (ANR) | The call runs on a background thread with a timeout |
-| Play can answer `OK` with an empty details bundle, and reading it throws a fatal `NullPointerException` | Every read is guarded and becomes a typed result |
-| Failures arrive as `PlatformException` with string codes | A sealed result type: `Attributed`, `Organic`, `Unavailable(reason)` |
-| Nothing stops the referrer being processed twice | An opt-in "consume once" store |
-| Android only | iOS AdServices token behind the same API |
+| They apply the Kotlin Gradle Plugin, which Flutter warns will fail to build in future releases (AGP 9 Built-in Kotlin) | Built-in Kotlin from day one. Flutter's check is a text match on the plugin's build file, and there is nothing to match |
+| The Binder call `getInstallReferrer()` runs on the platform thread, so a slow Play Store freezes the UI (ANR) | It runs on a background thread, with a timeout (default 10 s) |
+| Play can answer `OK` with details whose bundle is null; reading them is a fatal `NullPointerException` | Every read is guarded: `Unavailable(nullDetails)` |
+| `DeadObjectException`, `PERMISSION_ERROR`, `FEATURE_NOT_SUPPORTED`, … arrive as `PlatformException` strings, or crash the app | Each one is a distinct `UnavailableReason` |
+| A second `SERVICE_DISCONNECTED` can leave the call unanswered forever | One reconnect, then `Unavailable(serviceDisconnected)`; a timeout bounds everything |
+| Nothing stops a referrer from being acted on twice | Opt-in consume-once store: `readOnce()` + `markHandled()` |
+| Deep-link extraction is left to you, and decoding twice corrupts `%2F` paths | `referrer.deepLink(allow: [...])` decodes exactly once and enforces an allowlist |
+| "Unknown installer" errors for Samsung restores and other stores | `InstallSource` maps the installer package: Play, Galaxy Store, AppGallery, Amazon, side-load, restore |
+| No way to test without publishing | `debugOverride()` and a real [testing guide](TESTING.md) |
 
-## Planned API
+## 30-second quick start
 
 ```dart
-final result = await InstallAttribution.read(
-  timeout: const Duration(seconds: 10),
-);
+import 'package:imaji_install_attribution/imaji_install_attribution.dart';
 
-switch (result) {
-  case Attributed(:final referrer, :final clickedAt, :final source):
-    final link = referrer.deepLink(key: 'utm_content'); // e.g. /s/abc123
-    // route to `link`
-  case Organic():
-    // installed with no campaign
-  case Unavailable(:final reason):
-    // not installed from Play, service missing, timed out, …
+Future<void> routeFromInstall(GoRouter router) async {
+  final result = await InstallAttribution.readOnce(); // null once handled
+  switch (result) {
+    case null:
+      return; // handled on an earlier launch
+    case Attributed(:final referrer?):
+      final link = referrer.deepLink(allow: ['/items/', '/profile/']);
+      if (link != null) router.go(link.toString());
+    case Attributed(:final token?):
+      await sendToServer(token); // iOS: resolve with Apple's attribution API
+    case Attributed() || Organic():
+      break; // installed with no campaign
+    case Unavailable(:final reason):
+      log('No attribution: ${reason.name}'); // typed, never thrown
+  }
+  await InstallAttribution.markHandled();
 }
 ```
 
+That is the whole integration: no manifest edits, no `Info.plist` keys, no
+App Tracking Transparency prompt.
+
+## Install
+
+```yaml
+dependencies:
+  imaji_install_attribution:
+    git:
+      url: https://github.com/saimskywalker/flutter-imaji-install-attribution.git
+      ref: v0.1.0
+```
+
+Requirements: Flutter 3.44+ / Dart 3.12+. Android minSdk 21. iOS 15
+(Flutter's own minimum). Swift Package Manager and CocoaPods are both
+supported.
+
+### Android build setup
+
+Nothing to configure. The plugin's `android/build.gradle.kts` applies only
+`com.android.library` and configures Kotlin through the top-level
+`kotlin { compilerOptions { jvmTarget } }` block, exactly as Flutter's
+[built-in Kotlin guide for plugin authors](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors)
+prescribes.
+
+| Host app | Works? |
+|---|---|
+| AGP 9.x, `android.builtInKotlin=true` (Flutter 3.47+) | Yes. Verified with the example app; no KGP warning. |
+| AGP 9.x, `android.builtInKotlin=false` (Flutter 3.44+) | Yes, verified. Flutter's Gradle plugin applies `kotlin-android` to plugins that do not declare it. |
+| AGP 8.x | Yes, as long as the app has KGP 2.0+ on its classpath (every Flutter 3.44+ template does). |
+
+With built-in Kotlin, AGP compiles Kotlin with the KGP version on the build
+classpath. Flutter 3.47 requires 2.2.20+, while AGP 9.1 alone brings 2.2.10,
+so keep the template's `id("org.jetbrains.kotlin.android") version "2.4.0"
+apply false` in the app's `settings.gradle.kts`. It is a version pin, applied
+to no module, and Flutter does not warn about it.
+
+## API
+
+### `InstallAttribution.read({Duration timeout})`
+
+Returns `Future<InstallAttributionResult>` and **never throws**.
+
+| Result | When |
+|---|---|
+| `Attributed(source: googlePlay, referrer, clickedAt, installBeganAt, …)` | Play returned a referrer with a campaign, a `gclid`, or any custom key |
+| `Attributed(source: appleAds, token)` | An iOS device returned an AdServices token |
+| `Organic(referrer)` | Play's default `utm_source=google-play&utm_medium=organic`, an empty referrer, or only `(not set)` values |
+| `Unavailable(reason, message)` | Nothing could be read; `reason` says why |
+
+Every result also carries `installSource` (Android; `null` on iOS).
+
+`UnavailableReason`: `notSupported` (web, desktop, iOS simulator), `timeout`,
+`playStoreMissing`, `featureNotSupported`, `serviceUnavailable`,
+`serviceDisconnected`, `deadService`, `permissionError`, `developerError`,
+`nullDetails`, `unknownResponse`, `networkError` (iOS), `internalError`.
+
+Concurrent calls share one platform read. The default timeout is 10 seconds.
+
+### `InstallReferrer`
+
+- `raw`: the string exactly as Play returned it.
+- `parameters`, `referrer['key']`: values decoded **exactly once**.
+- `utmSource`, `utmMedium`, `utmCampaign`, `utmContent`, `utmTerm`: `null`
+  when absent or `(not set)`.
+- `isOrganic`: the rule `read()` uses.
+- `deepLink({key = 'utm_content', required allow, hosts = const []})`: the
+  in-app path, or `null`. Only paths under an allowlisted prefix pass
+  (`/items` allows `/items` and `/items/42`, never `/itemsX`). Absolute URLs
+  are refused unless they are `https` on a listed host; `//host`, `..`,
+  backslashes and control characters are always refused.
+
+### Consume once
+
+`readOnce()` returns `null` after `markHandled()`. Nothing is marked
+automatically, so a crash between reading and routing does not lose the
+link. The marker is a tiny file excluded from backups (`noBackupFilesDir` on
+Android, an excluded file in Application Support on iOS): an uninstall and
+reinstall starts unhandled again, which matches Play — a reinstall gets a
+fresh referrer. `isHandled()` and `clearHandled()` exist for debug menus.
+
+### `InstallSource`
+
+`InstallAttribution.installSource()` (or `result.installSource`) reports the
+installer package — `getInstallSourceInfo()` on API 30+,
+`getInstallerPackageName()` below — mapped to `InstallStore`: `googlePlay`,
+`galaxyStore`, `huaweiAppGallery`, `amazonAppstore`, `sideload`, `restore`,
+`other`. It cannot tell which chat app a link was shared in; only a
+`utm_source` on the link can.
+
+### `PlayStoreUrl`
+
+`PlayStoreUrl.web(packageName:, referrer: {...})` and `.market(...)` build
+store links whose referrer is encoded exactly once. See
+[TESTING.md](TESTING.md#4-building-the-play-url).
+
+### Testing
+
+- `InstallAttribution.debugOverride(referrer: ..., clickedAt: ...)`: debug
+  builds only; profile and release builds ignore it.
+- `ImajiInstallAttributionPlatform.instance = FakeAttribution();`: unit tests
+  without a device.
+- **[TESTING.md](TESTING.md)**: how to see a real referrer. Only a build that
+  Google Play installed has one; side-loads never do.
+
+## Migrating from other plugins
+
+### From `play_install_referrer`
+
+```dart
+// Before
+try {
+  final details = await PlayInstallReferrer.installReferrer;
+  handle(details.installReferrer, details.referrerClickTimestampSeconds);
+} catch (e) {
+  // PlatformException, or a native crash before this line runs
+}
+
+// After
+if (await InstallAttribution.read()
+    case Attributed(:final referrer?, :final clickedAt)) {
+  handle(referrer.raw, clickedAt);
+}
+```
+
+`referrerClickTimestampSeconds` → `clickedAt` (a UTC `DateTime`, `null`
+when Play reports 0); `installBeginTimestampSeconds` → `installBeganAt`;
+`installVersion` → `installVersion`; the `*ServerSeconds` values →
+`clickedAtServer` / `installBeganAtServer`.
+
+### From `android_play_install_referrer`
+
+```dart
+// Before
+final info = await AndroidPlayInstallReferrer.installReferrer;
+final source = Uri.splitQueryString(info.installReferrer ?? '')['utm_source'];
+
+// After
+final source = switch (await InstallAttribution.read()) {
+  Attributed(:final referrer?) => referrer.utmSource,
+  _ => null,
+};
+```
+
+Error codes become reasons: `FEATURE_NOT_SUPPORTED` → `featureNotSupported`,
+`PERMISSION_ERROR` → `permissionError`, `SERVICE_UNAVAILABLE` →
+`serviceUnavailable`, `SERVICE_DISCONNECTED` → `serviceDisconnected`,
+`DeadObjectException` → `deadService`.
+
+### From `stack_deferred_link`
+
+```dart
+// Before
+final info = await StackDeferredLink.getInstallReferrerAndroid();
+final path = Uri.decodeComponent(info.installReferrer); // decodes again
+
+// After
+final link = switch (await InstallAttribution.read()) {
+  Attributed(:final referrer?) => referrer.deepLink(allow: ['/items/']),
+  _ => null,
+};
+```
+
+Drop any extra `Uri.decodeComponent` on referrer values: `parameters` are
+already decoded once, and decoding again corrupts paths containing `%2F`. On
+iOS this plugin reads the AdServices token rather than the clipboard; keep a
+clipboard or "paste link" flow of your own if you rely on one.
+
+## Comparison
+
+| | imaji_install_attribution | play_install_referrer | android_play_install_referrer | stack_deferred_link |
+|---|---|---|---|---|
+| Play Install Referrer | Yes | Yes | Yes | Yes |
+| iOS | AdServices token | No | No | Clipboard |
+| No Kotlin Gradle Plugin (AGP 9 built-in Kotlin) | Yes | Applies KGP | Applies KGP | Applies KGP |
+| Binder call off the platform thread | Yes | No | No | No |
+| Timeout | Yes | No | No | No |
+| Null details bundle | Typed result | Crash | Crash | `PlatformException` |
+| Failures | Typed `UnavailableReason` | `PlatformException` | `PlatformException` | `PlatformException` |
+| Deep-link helper | Allowlist, single decode | No | No | Pattern list |
+| Consume-once store | Yes | No | No | No |
+| Installer / store detection | Yes | No | No | No |
+| Debug override + testing guide | Yes | No | No | No |
+
+Based on each project's public default branch and issue tracker in October
+2026. Corrections are welcome.
+
+## FAQ
+
+**Do I need the App Tracking Transparency prompt on iOS?** No. Fetching the
+AdServices token does not require ATT. Resolving it is a server-to-Apple call
+outside this plugin.
+
+**Why do I always get `Organic` while developing?** Because Play did not
+install your debug build. See [TESTING.md](TESTING.md).
+
+**Is there a deferred deep link on iOS?** Not from the platform. The
+AdServices token tells your server about Apple Ads campaigns; it carries no
+custom payload.
+
+**Can I call `read()` on every launch?** Yes. Concurrent calls share one
+read, and Play keeps the referrer for 90 days. `readOnce()` skips the call
+entirely once you have handled it.
+
+**Does it build with AGP 8 or `builtInKotlin=false`?** Yes; see
+[Android build setup](#android-build-setup).
+
+**Does it fingerprint users?** No. It reads what the platform hands the app
+and nothing else.
+
 ## Non-goals
 
-- Fingerprinting or any matching that identifies a person across apps.
-- A hosted attribution service. This plugin reads what the platform
-  gives you, and nothing else.
+- Fingerprinting, or any matching that identifies a person across apps.
+- A hosted attribution service, or calling Apple's attribution API for you.
 
 ## Contributing
 
 Issues and pull requests are welcome — especially device reports
 ("Play returned X on <OEM> Android N"), since referrer behaviour varies by
 vendor and Play Store version.
+
+Run the checks CI runs:
+
+```bash
+dart format --set-exit-if-changed .
+flutter analyze
+flutter test
+cd example && flutter build apk --debug
+cd example/android && ./gradlew :imaji_install_attribution:testDebugUnitTest
+```
+
+Building the example **for iOS** has one quirk: Xcode resolves the plugin's
+Swift package through its real path, and that package's identity is its
+directory name. Clone into a folder named `imaji_install_attribution` (CI does
+the same) or `xcodebuild` refuses to resolve packages with *"unable to
+override package 'imaji_install_attribution'"*. Apps that depend on the
+plugin are not affected.
 
 ## Support
 
