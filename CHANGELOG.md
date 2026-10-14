@@ -1,3 +1,16 @@
+## 0.1.1
+
+Documentation only; no API or behaviour change.
+
+- README: the package is on pub.dev. Install with
+  `flutter pub add imaji_install_attribution` (or
+  `imaji_install_attribution: ^0.1.0`); the Git dependency is now only the
+  way to track unreleased `main`. Adds pub version, pub points, likes, CI
+  and license badges.
+- README comparison table: `stack_deferred_link` crashes on a null details
+  bundle; it does not report a `PlatformException` as the table said.
+- RELEASING.md is a reusable per-release checklist.
+
 ## 0.1.0
 
 First release.

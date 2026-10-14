@@ -13,7 +13,7 @@
 // its classpath (every Flutter 3.44+ app template does).
 
 group = "io.github.saimskywalker.imaji_install_attribution"
-version = "0.1.0"
+version = "0.1.1"
 
 buildscript {
     repositories {
