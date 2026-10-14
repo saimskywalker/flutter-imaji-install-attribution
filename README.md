@@ -1,5 +1,11 @@
 # imaji_install_attribution — Play Install Referrer & Apple AdServices for Flutter
 
+[![pub version](https://img.shields.io/pub/v/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution)
+[![pub points](https://img.shields.io/pub/points/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution/score)
+[![pub likes](https://img.shields.io/pub/likes/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution/score)
+[![CI](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/github/license/saimskywalker/flutter-imaji-install-attribution)](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/LICENSE)
+
 A Flutter plugin that answers one question on Android and iOS: **where did
 this install come from?** — and turns the answer into the deep link the user
 was trying to open before they installed (a *deferred deep link*).
@@ -12,8 +18,8 @@ was trying to open before they installed (a *deferred deep link*).
   file, so Flutter's *"Your app uses the following plugins that apply Kotlin
   Gradle Plugin (KGP)"* warning never names this plugin.
 
-> Status: 0.1.0, pre-release. Not on pub.dev yet; depend on it from Git for
-> now (see [Install](#install)).
+> Published on [pub.dev](https://pub.dev/packages/imaji_install_attribution):
+> `flutter pub add imaji_install_attribution` (see [Install](#install)).
 
 ## Why this exists
 
@@ -63,17 +69,34 @@ App Tracking Transparency prompt.
 
 ## Install
 
+```bash
+flutter pub add imaji_install_attribution
+```
+
+or add it to `pubspec.yaml` yourself:
+
 ```yaml
 dependencies:
-  imaji_install_attribution:
-    git:
-      url: https://github.com/saimskywalker/flutter-imaji-install-attribution.git
-      ref: v0.1.0
+  imaji_install_attribution: ^0.1.0
 ```
 
 Requirements: Flutter 3.44+ / Dart 3.12+. Android minSdk 21. iOS 15
 (Flutter's own minimum). Swift Package Manager and CocoaPods are both
 supported.
+
+### Tracking `main`
+
+To try unreleased changes before they reach pub.dev, depend on the
+repository's `main` branch instead. It is not a release: pin a commit with
+`ref:` if you need a reproducible build.
+
+```yaml
+dependencies:
+  imaji_install_attribution:
+    git:
+      url: https://github.com/saimskywalker/flutter-imaji-install-attribution.git
+      ref: main
+```
 
 ### Android build setup
 
@@ -235,12 +258,17 @@ clipboard or "paste link" flow of your own if you rely on one.
 | No Kotlin Gradle Plugin (AGP 9 built-in Kotlin) | Yes | Applies KGP | Applies KGP | Applies KGP |
 | Binder call off the platform thread | Yes | No | No | No |
 | Timeout | Yes | No | No | No |
-| Null details bundle | Typed result | Crash | Crash | `PlatformException` |
+| Null details bundle | Typed result | Crash | Crash | Crash |
 | Failures | Typed `UnavailableReason` | `PlatformException` | `PlatformException` | `PlatformException` |
 | Deep-link helper | Allowlist, single decode | No | No | Pattern list |
 | Consume-once store | Yes | No | No | No |
 | Installer / store detection | Yes | No | No | No |
 | Debug override + testing guide | Yes | No | No | No |
+
+"Crash" in the null-details row: every getter of Play's `ReferrerDetails`
+reads its bundle, so a null bundle throws `NullPointerException` on the
+first read, and each of those plugins makes that read while building its
+result, outside any `try`, on the main thread.
 
 Based on each project's public default branch and issue tracker in October
 2026. Corrections are welcome.
