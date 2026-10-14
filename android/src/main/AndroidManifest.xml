@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Lets the plugin see whether the Play Store is installed (Android 11+
+         package visibility), so a device without it reports
+         Unavailable(playStoreMissing) instead of a generic bind failure. -->
+    <queries>
+        <package android:name="com.android.vending" />
+    </queries>
+</manifest>
