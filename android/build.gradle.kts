@@ -8,7 +8,7 @@
 //
 // Hosts on AGP 9 with `android.builtInKotlin=true` compile the Kotlin sources
 // with AGP's own Kotlin support. Hosts with `android.builtInKotlin=false` (or
-// AGP 8) still build: Flutter's Gradle plugin applies `kotlin-android` to
+// AGP 8) still build: Flutter's Gradle plugin applies the Kotlin plugin to
 // plugin projects that do not declare it, as long as the host has KGP 2.0+ on
 // its classpath (every Flutter 3.44+ app template does).
 

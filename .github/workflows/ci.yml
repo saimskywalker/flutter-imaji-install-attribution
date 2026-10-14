@@ -43,7 +43,8 @@ jobs:
         run: dart pub publish --dry-run
       - name: No Kotlin Gradle Plugin in the plugin build file
         run: |
-          if grep -nE "kotlin-android|org\.jetbrains\.kotlin\.android|kotlin-gradle-plugin|kotlinOptions" android/build.gradle.kts; then
+          # Comments are ignored; any code line naming KGP fails the build.
+          if grep -vE '^\s*//' android/build.gradle.kts | grep -nE "kotlin-android|org\.jetbrains\.kotlin\.android|kotlin-gradle-plugin|kotlinOptions"; then
             echo "::error::android/build.gradle.kts must not reference the Kotlin Gradle Plugin"
             exit 1
           fi
