@@ -156,6 +156,95 @@ Concurrent calls share one platform read. The default timeout is 10 seconds.
   backslashes, control characters and percent escapes that are malformed or
   not UTF-8 (`%ZZ`, `%FF`) are always refused. It never throws: the referrer
   is input anyone can craft, so anything that is not a safe path is `null`.
+- `deepLinkResult(...)`: the same check, but it says **why** there is no
+  link. Use it to log why an attributed install landed on the home screen:
+
+  ```dart
+  switch (referrer.deepLinkResult(allow: ['/invite/'])) {
+    case DeepLinkFound(:final uri):
+      router.go(uri.toString());
+    case DeepLinkRejected(:final reason):
+      log('No deep link: ${reason.name}'); // never throws either
+  }
+  ```
+
+  The `DeepLinkRejection` values are `absent`, `unsafe`, `undecodable`,
+  `notAPath`, `hostNotAllowed`, `looksDoubleEncoded` and `notAllowlisted`.
+  `looksDoubleEncoded` is the common link-builder bug: after one decode the
+  value is `%2Finvite%2Fabc123`, and one more decode would give an
+  allowlisted link. It is reported, **never repaired**. Repairing it would
+  hide the builder bug and corrupt paths that really contain `%2F`.
+- `InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)`: see
+  [the decoding rule](#the-decoding-rule). `referrer.withDecoding(...)`
+  re-reads the same `raw` string.
+
+### The decoding rule
+
+A deferred link crosses two codebases. A **link builder** (a server, an edge
+redirect, a CLI) puts the in-app path into the store URL. The **app**
+decodes it. Each side's tests usually pin only its own literal, so both can
+stay green while disagreeing. Here is the rule this plugin applies:
+
+1. The builder encodes the path **once** as the value of `utm_content`, and
+   the whole referrer **once more** as the store URL's `referrer=`
+   parameter: `/invite/abc123` → `utm_content=%2Finvite%2Fabc123` →
+   `&referrer=utm_content%3D%252Finvite%252Fabc123`. `PlayStoreUrl` does
+   exactly this.
+2. Play removes the outer layer and hands the app
+   `utm_content=%2Finvite%2Fabc123`.
+3. `InstallReferrer` splits on `&`, then splits each piece at its first `=`.
+   It decodes each key and value **once** and keeps the first occurrence of
+   a key. The default decoding is `ReferrerDecoding.form`
+   ([`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded)):
+   `+` is a space and `%XX` is UTF-8.
+   `ReferrerDecoding.rfc3986`
+   ([RFC 3986 §2.1](https://www.rfc-editor.org/rfc/rfc3986#section-2.1)) is
+   the same, except that `+` stays `+`.
+4. `deepLink` checks the value in a fixed order and returns the first
+   failure as the `DeepLinkRejection`.
+
+The two decodings agree on everything a real encoder produces: form
+encoders write a space as `+` and a `+` as `%2B`, and RFC 3986 encoders
+(`encodeURIComponent`) write `%20` and `%2B`. They disagree only on a
+**literal** `+`, which appears when the builder did not encode the value at
+all:
+
+| Referrer as Play returns it | `form` (default) | `rfc3986` |
+|---|---|---|
+| `utm_content=%2Fitems%2Fa%2Bb` | `/items/a+b` | `/items/a+b` |
+| `utm_content=%2Fitems%2Fa+b` | `/items/a b` | `/items/a+b` |
+| `utm_content=/items/a+b` (not encoded) | `/items/a b` | `/items/a+b` |
+
+#### Test your link builder against the vectors
+
+[`test/vectors/deep_link_vectors.json`](test/vectors/deep_link_vectors.json)
+is a language-neutral table of the rule above. For each row, it gives:
+
+- the referrer as Play returns it, and the `decoding`;
+- the `value` after one decode;
+- the `expected_deep_link`, or the `rejection` reason;
+- for rows built from a `path`, the exact `play_url_referrer_param` and
+  `play_store_url` a builder must emit.
+
+The rows include `+`, `%`, `&`, `=`, `#`, a query, non-ASCII, an encoded
+slash inside a segment, double encoding, and every rejection reason. The
+plugin's own tests check `InstallReferrer` and `PlayStoreUrl` against every
+row. A backend in any language can load the same file. Pin it to a release
+tag, for example
+`https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/v0.2.0/test/vectors/deep_link_vectors.json`
+(available from 0.2.0). For example, in Python:
+
+```python
+import json, urllib.parse, urllib.request
+
+URL = "https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/v0.2.0/test/vectors/deep_link_vectors.json"
+doc = json.load(urllib.request.urlopen(URL))
+for row in doc["vectors"]:
+    if "path" in row:  # a row a builder must reproduce
+        referrer = my_build_referrer({doc["key"]: row["path"]})
+        assert referrer == row["referrer_as_play_returns_it"], row["name"]
+        assert my_store_url(doc["package_name"], referrer) == row["play_store_url"]
+```
 
 ### Consume once, on the first launch only
 
@@ -364,6 +453,11 @@ when Play reports 0); `installBeginTimestampSeconds` → `installBeganAt`;
 `installVersion` → `installVersion`; the `*ServerSeconds` values →
 `clickedAtServer` / `installBeganAtServer`.
 
+If you split the referrer yourself, note which decoder you used. With
+`Uri.splitQueryString` or `Uri.decodeQueryComponent` (form decoding,
+`+` → space), the default matches. With `Uri.decodeComponent`, pass
+`decoding: ReferrerDecoding.rfc3986`.
+
 ### From `android_play_install_referrer`
 
 ```dart
@@ -398,7 +492,11 @@ final link = switch (await InstallAttribution.read()) {
 ```
 
 Drop any extra `Uri.decodeComponent` on referrer values: `parameters` are
-already decoded once, and decoding again corrupts paths containing `%2F`. On
+already decoded once, and decoding again corrupts paths containing `%2F`.
+If your old code decoded the values themselves with `Uri.decodeComponent`
+(RFC 3986, where `+` stays `+`), construct the referrer with
+`InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)` to keep the same
+answers; see [the decoding rule](#the-decoding-rule). On
 iOS this plugin reads the AdServices token rather than the clipboard; keep a
 clipboard or "paste link" flow of your own if you rely on one.
 
@@ -413,7 +511,7 @@ clipboard or "paste link" flow of your own if you rely on one.
 | Timeout | Yes | No | No | No |
 | Null details bundle | Typed result | Crash | Crash | Crash |
 | Failures | Typed `UnavailableReason` | `PlatformException` | `PlatformException` | `PlatformException` |
-| Deep-link helper | Allowlist, single decode | No | No | Pattern list |
+| Deep-link helper | Allowlist, single decode, typed rejection reasons, cross-language vectors | No | No | Pattern list |
 | Consume-once store | Yes | No | No | No |
 | Installer / store detection | Yes | No | No | No |
 | Debug override + testing guide | Yes | No | No | No |

@@ -155,6 +155,134 @@ void main() {
     });
   });
 
+  group('deepLinkResult', () {
+    const allow = ['/invite/', '/items'];
+    const hosts = ['example.com'];
+
+    // (value after Play's decode, expected reason)
+    final reasons = <(String?, DeepLinkRejection)>[
+      (null, DeepLinkRejection.absent),
+      ('', DeepLinkRejection.absent),
+      ('   ', DeepLinkRejection.absent),
+      ('(not set)', DeepLinkRejection.absent),
+      (r'/items\x', DeepLinkRejection.unsafe),
+      ('/items/\u0000', DeepLinkRejection.unsafe),
+      ('//evil.example/items', DeepLinkRejection.unsafe),
+      ('/items/../admin', DeepLinkRejection.unsafe),
+      ('/items/%2E%2E/admin', DeepLinkRejection.unsafe),
+      ('https://example.com//items', DeepLinkRejection.unsafe),
+      ('/items/%FF', DeepLinkRejection.undecodable),
+      ('/items/%', DeepLinkRejection.undecodable),
+      ('items/1', DeepLinkRejection.notAPath),
+      ('intent://items/1', DeepLinkRejection.notAPath),
+      ('mailto:a@example.com', DeepLinkRejection.notAPath),
+      ('https://example.com', DeepLinkRejection.notAPath),
+      ('https://evil.example/items/1', DeepLinkRejection.hostNotAllowed),
+      ('http://example.com/items/1', DeepLinkRejection.hostNotAllowed),
+      ('https://user@example.com/items/1', DeepLinkRejection.hostNotAllowed),
+      ('https://example.com:8443/items/1', DeepLinkRejection.hostNotAllowed),
+      ('%2Finvite%2Fabc123', DeepLinkRejection.looksDoubleEncoded),
+      ('%2finvite%2fabc123', DeepLinkRejection.looksDoubleEncoded),
+      (
+        'https%3A%2F%2Fexample.com%2Fitems%2F1',
+        DeepLinkRejection.looksDoubleEncoded,
+      ),
+      ('%2Fadmin', DeepLinkRejection.notAPath),
+      ('%252Finvite%252Fabc123', DeepLinkRejection.notAPath),
+      ('/admin', DeepLinkRejection.notAllowlisted),
+      ('/itemsX', DeepLinkRejection.notAllowlisted),
+    ];
+    for (final (value, reason) in reasons) {
+      test('"$value" -> ${reason.name}', () {
+        final result = InstallReferrer.resolveDeepLinkResult(
+          value,
+          allow: allow,
+          hosts: hosts,
+        );
+        expect(result, DeepLinkRejected(reason, value: value));
+        expect(result.uriOrNull, isNull);
+        expect(
+          InstallReferrer.resolveDeepLink(value, allow: allow, hosts: hosts),
+          isNull,
+        );
+      });
+    }
+
+    test('a found link carries the uri', () {
+      final result = InstallReferrer(
+        'utm_content=%2Finvite%2Fabc123%3Fx%3D1',
+      ).deepLinkResult(allow: allow);
+      expect(result, DeepLinkFound(Uri.parse('/invite/abc123?x=1')));
+      expect(result.uriOrNull.toString(), '/invite/abc123?x=1');
+    });
+
+    test('a double-encoded value is reported, never repaired', () {
+      final r = InstallReferrer('utm_content=%252Finvite%252Fabc123');
+      expect(r['utm_content'], '%2Finvite%2Fabc123');
+      expect(
+        (r.deepLinkResult(allow: allow) as DeepLinkRejected).reason,
+        DeepLinkRejection.looksDoubleEncoded,
+      );
+      expect(r.deepLink(allow: allow), isNull);
+    });
+
+    test('a custom key', () {
+      final r = InstallReferrer('link=%2Fitems%2F9');
+      expect(
+        r.deepLinkResult(key: 'link', allow: allow).uriOrNull.toString(),
+        '/items/9',
+      );
+      expect(
+        (r.deepLinkResult(allow: allow) as DeepLinkRejected).reason,
+        DeepLinkRejection.absent,
+      );
+    });
+  });
+
+  group('ReferrerDecoding', () {
+    test('form is the default: + is a space', () {
+      final r = InstallReferrer('utm_content=/items/a+b&q=x%2By');
+      expect(r.decoding, ReferrerDecoding.form);
+      expect(r['utm_content'], '/items/a b');
+      expect(r['q'], 'x+y');
+      expect(r.deepLink(allow: ['/items']).toString(), '/items/a%20b');
+    });
+
+    test('rfc3986: + stays +, %XX still decodes once', () {
+      final r = InstallReferrer(
+        'utm_content=/items/a+b&q=x%2By&p=%2Ftags%2Fa%252Fb',
+        decoding: ReferrerDecoding.rfc3986,
+      );
+      expect(r['utm_content'], '/items/a+b');
+      expect(r['q'], 'x+y');
+      expect(r['p'], '/tags/a%2Fb', reason: 'still decoded exactly once');
+      expect(r.deepLink(allow: ['/items']).toString(), '/items/a+b');
+    });
+
+    test('rfc3986 keeps a malformed escape as written', () {
+      final r = InstallReferrer(
+        'bad=%ZZ&odd=%FF',
+        decoding: ReferrerDecoding.rfc3986,
+      );
+      expect(r['bad'], '%ZZ');
+      expect(r['odd'], '%FF');
+    });
+
+    test('withDecoding re-reads the same raw string; equality sees it', () {
+      final form = InstallReferrer('utm_content=/items/a+b');
+      final rfc = form.withDecoding(ReferrerDecoding.rfc3986);
+      expect(rfc.raw, form.raw);
+      expect(rfc['utm_content'], '/items/a+b');
+      expect(rfc == form, isFalse);
+      expect(
+        rfc,
+        InstallReferrer(form.raw, decoding: ReferrerDecoding.rfc3986),
+      );
+      expect(form, InstallReferrer(form.raw));
+      expect(form.hashCode, InstallReferrer(form.raw).hashCode);
+    });
+  });
+
   group('PlayStoreUrl', () {
     const package = 'com.example.app';
     const referrer = {
