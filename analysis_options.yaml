@@ -9,6 +9,9 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    # Pure-Dart packages in this repository are analysed by their own CI job,
+    # with their own dependencies.
+    - packages/**
 
 linter:
   rules:

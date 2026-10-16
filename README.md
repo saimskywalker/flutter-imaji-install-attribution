@@ -179,6 +179,18 @@ installer package — `getInstallSourceInfo()` on API 30+,
 store links whose referrer is encoded exactly once. See
 [TESTING.md](TESTING.md#4-building-the-play-url).
 
+#### Building links on a server
+
+Store links are usually built by a backend, which cannot import a Flutter
+package. [`imaji_referrer_builder`](packages/imaji_referrer_builder) is the
+same builder in pure Dart with no dependencies: it appends the path to a
+configured campaign string without changing it, encodes it once, and
+refuses paths the app would not route. Its README lists the five rules a
+builder in any language must follow, and
+[`test/vectors/referrer_vectors.json`](test/vectors/referrer_vectors.json)
+is the file both sides are tested against — test your link builder against
+it.
+
 ### Testing
 
 - `InstallAttribution.debugOverride(referrer: ..., clickedAt: ...)`: debug

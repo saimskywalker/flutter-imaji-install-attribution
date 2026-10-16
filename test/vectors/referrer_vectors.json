@@ -1,0 +1,264 @@
+{
+  "about": "Shared vectors for the deferred-deep-link referrer contract. Builders (any language) must emit referrer_as_play_returns_it and play_store_url byte for byte from campaign + path; the app must route expected_deep_link from referrer_as_play_returns_it. Every refused row must be rejected by the builder. Read by the tests of imaji_install_attribution (parser) and packages/imaji_referrer_builder (builder).",
+  "format_version": 1,
+  "package_name": "com.example.app",
+  "key": "utm_content",
+  "allow": [
+    "/invite/",
+    "/items/"
+  ],
+  "hosts": [
+    "example.com"
+  ],
+  "vectors": [
+    {
+      "name": "configured campaign plus an invite path",
+      "campaign": "utm_source=share&utm_medium=social&utm_campaign=spring",
+      "path": "/invite/abc123",
+      "referrer_as_play_returns_it": "utm_source=share&utm_medium=social&utm_campaign=spring&utm_content=%2Finvite%2Fabc123",
+      "play_url_referrer_param": "utm_source%3Dshare%26utm_medium%3Dsocial%26utm_campaign%3Dspring%26utm_content%3D%252Finvite%252Fabc123",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dshare%26utm_medium%3Dsocial%26utm_campaign%3Dspring%26utm_content%3D%252Finvite%252Fabc123",
+      "expected_deep_link": "/invite/abc123"
+    },
+    {
+      "name": "no campaign configured: the path alone",
+      "campaign": "",
+      "path": "/invite/abc123",
+      "referrer_as_play_returns_it": "utm_content=%2Finvite%2Fabc123",
+      "play_url_referrer_param": "utm_content%3D%252Finvite%252Fabc123",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Finvite%252Fabc123",
+      "expected_deep_link": "/invite/abc123"
+    },
+    {
+      "name": "no path: the campaign alone, unchanged",
+      "campaign": "utm_source=share&utm_medium=social&utm_campaign=spring",
+      "path": null,
+      "referrer_as_play_returns_it": "utm_source=share&utm_medium=social&utm_campaign=spring",
+      "play_url_referrer_param": "utm_source%3Dshare%26utm_medium%3Dsocial%26utm_campaign%3Dspring",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dshare%26utm_medium%3Dsocial%26utm_campaign%3Dspring",
+      "expected_deep_link": null
+    },
+    {
+      "name": "a campaign value written with + keeps its +",
+      "campaign": "utm_source=share&utm_campaign=spring+sale",
+      "path": "/items/42",
+      "referrer_as_play_returns_it": "utm_source=share&utm_campaign=spring+sale&utm_content=%2Fitems%2F42",
+      "play_url_referrer_param": "utm_source%3Dshare%26utm_campaign%3Dspring%2Bsale%26utm_content%3D%252Fitems%252F42",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dshare%26utm_campaign%3Dspring%2Bsale%26utm_content%3D%252Fitems%252F42",
+      "expected_deep_link": "/items/42"
+    },
+    {
+      "name": "a campaign value written with %20 keeps its %20",
+      "campaign": "utm_source=share&utm_campaign=spring%20sale",
+      "path": "/items/42",
+      "referrer_as_play_returns_it": "utm_source=share&utm_campaign=spring%20sale&utm_content=%2Fitems%2F42",
+      "play_url_referrer_param": "utm_source%3Dshare%26utm_campaign%3Dspring%2520sale%26utm_content%3D%252Fitems%252F42",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dshare%26utm_campaign%3Dspring%2520sale%26utm_content%3D%252Fitems%252F42",
+      "expected_deep_link": "/items/42"
+    },
+    {
+      "name": "a campaign that ends with & gets no second &",
+      "campaign": "utm_source=share&",
+      "path": "/items/42",
+      "referrer_as_play_returns_it": "utm_source=share&utm_content=%2Fitems%2F42",
+      "play_url_referrer_param": "utm_source%3Dshare%26utm_content%3D%252Fitems%252F42",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dshare%26utm_content%3D%252Fitems%252F42",
+      "expected_deep_link": "/items/42"
+    },
+    {
+      "name": "a literal + in the path stays a +",
+      "campaign": "",
+      "path": "/items/a+b",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2Fa%2Bb",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252Fa%252Bb",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252Fa%252Bb",
+      "expected_deep_link": "/items/a+b"
+    },
+    {
+      "name": "a space in the path",
+      "campaign": "",
+      "path": "/items/a b",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2Fa+b",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252Fa%2Bb",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252Fa%2Bb",
+      "expected_deep_link": "/items/a%20b"
+    },
+    {
+      "name": "a query with & and = in the path",
+      "campaign": "utm_source=share&utm_medium=social&utm_campaign=spring",
+      "path": "/items/42?ref=campaign-42&x=1",
+      "referrer_as_play_returns_it": "utm_source=share&utm_medium=social&utm_campaign=spring&utm_content=%2Fitems%2F42%3Fref%3Dcampaign-42%26x%3D1",
+      "play_url_referrer_param": "utm_source%3Dshare%26utm_medium%3Dsocial%26utm_campaign%3Dspring%26utm_content%3D%252Fitems%252F42%253Fref%253Dcampaign-42%2526x%253D1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_source%3Dshare%26utm_medium%3Dsocial%26utm_campaign%3Dspring%26utm_content%3D%252Fitems%252F42%253Fref%253Dcampaign-42%2526x%253D1",
+      "expected_deep_link": "/items/42?ref=campaign-42&x=1"
+    },
+    {
+      "name": "a fragment in the path",
+      "campaign": "",
+      "path": "/items/42#reviews",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F42%23reviews",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F42%2523reviews",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F42%2523reviews",
+      "expected_deep_link": "/items/42#reviews"
+    },
+    {
+      "name": "an encoded slash inside a segment",
+      "campaign": "",
+      "path": "/items/a%2Fb",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2Fa%252Fb",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252Fa%25252Fb",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252Fa%25252Fb",
+      "expected_deep_link": "/items/a%2Fb"
+    },
+    {
+      "name": "an encoded percent sign",
+      "campaign": "",
+      "path": "/items/100%25",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F100%2525",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F100%252525",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F100%252525",
+      "expected_deep_link": "/items/100%25"
+    },
+    {
+      "name": "a non-ASCII segment",
+      "campaign": "",
+      "path": "/items/café",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2Fcaf%C3%A9",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252Fcaf%25C3%25A9",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252Fcaf%25C3%25A9",
+      "expected_deep_link": "/items/caf%C3%A9"
+    },
+    {
+      "name": "the prefix itself",
+      "campaign": "",
+      "path": "/items",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems",
+      "play_url_referrer_param": "utm_content%3D%252Fitems",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems",
+      "expected_deep_link": "/items"
+    },
+    {
+      "name": "an https URL on an allowed host",
+      "campaign": "",
+      "path": "https://example.com/items/5?x=1",
+      "referrer_as_play_returns_it": "utm_content=https%3A%2F%2Fexample.com%2Fitems%2F5%3Fx%3D1",
+      "play_url_referrer_param": "utm_content%3Dhttps%253A%252F%252Fexample.com%252Fitems%252F5%253Fx%253D1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3Dhttps%253A%252F%252Fexample.com%252Fitems%252F5%253Fx%253D1",
+      "expected_deep_link": "/items/5?x=1"
+    }
+  ],
+  "refused": [
+    {
+      "name": "a path outside the allowlist",
+      "campaign": "",
+      "path": "/admin",
+      "reason": "notAllowlisted",
+      "app_drops_path": true
+    },
+    {
+      "name": "a prefix lookalike",
+      "campaign": "",
+      "path": "/itemsX",
+      "reason": "notAllowlisted",
+      "app_drops_path": true
+    },
+    {
+      "name": "a relative path",
+      "campaign": "",
+      "path": "items/42",
+      "reason": "notAPath",
+      "app_drops_path": true
+    },
+    {
+      "name": "a protocol-relative URL",
+      "campaign": "",
+      "path": "//evil.example/items/1",
+      "reason": "hostNotAllowed",
+      "app_drops_path": true
+    },
+    {
+      "name": "an https URL on a host that is not allowed",
+      "campaign": "",
+      "path": "https://evil.example/items/1",
+      "reason": "hostNotAllowed",
+      "app_drops_path": true
+    },
+    {
+      "name": "an allowed host over http",
+      "campaign": "",
+      "path": "http://example.com/items/1",
+      "reason": "hostNotAllowed",
+      "app_drops_path": true
+    },
+    {
+      "name": "a custom scheme",
+      "campaign": "",
+      "path": "intent://items/1",
+      "reason": "hostNotAllowed",
+      "app_drops_path": true
+    },
+    {
+      "name": "a backslash",
+      "campaign": "",
+      "path": "/items\\..\\admin",
+      "reason": "forbiddenCharacter",
+      "app_drops_path": true
+    },
+    {
+      "name": "a control character inside the path",
+      "campaign": "",
+      "path": "/items\n/1",
+      "reason": "forbiddenCharacter",
+      "app_drops_path": true
+    },
+    {
+      "name": "a dot-dot segment",
+      "campaign": "",
+      "path": "/items/../admin",
+      "reason": "unsafe",
+      "app_drops_path": true
+    },
+    {
+      "name": "a percent-encoded dot-dot segment",
+      "campaign": "",
+      "path": "/items/%2e%2e/admin",
+      "reason": "unsafe",
+      "app_drops_path": true
+    },
+    {
+      "name": "an empty path",
+      "campaign": "",
+      "path": "",
+      "reason": "empty",
+      "app_drops_path": true
+    },
+    {
+      "name": "surrounding whitespace (the app would trim it; the builder refuses)",
+      "campaign": "",
+      "path": " /items/1",
+      "reason": "surroundingWhitespace",
+      "app_drops_path": false
+    },
+    {
+      "name": "a campaign that already holds the key",
+      "campaign": "utm_source=share&utm_content=spring",
+      "path": "/items/42",
+      "reason": "campaignHoldsKey",
+      "app_drops_path": null
+    },
+    {
+      "name": "a campaign that holds the key percent-encoded",
+      "campaign": "utm_source=share&utm%5Fcontent=spring",
+      "path": "/items/42",
+      "reason": "campaignHoldsKey",
+      "app_drops_path": null
+    },
+    {
+      "name": "a campaign that starts with ?",
+      "campaign": "?utm_source=share",
+      "path": "/items/42",
+      "reason": "campaignStartsWithQuestionMark",
+      "app_drops_path": null
+    }
+  ]
+}
