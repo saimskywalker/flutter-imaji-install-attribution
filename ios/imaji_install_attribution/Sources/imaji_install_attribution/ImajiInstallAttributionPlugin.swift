@@ -29,6 +29,9 @@ public final class ImajiInstallAttributionPlugin: NSObject, FlutterPlugin {
     case "installSource":
       // iOS has no installer package to report.
       result(nil)
+    case "installFacts":
+      // No referrer to protect on iOS: `treatUpgradesAsHandled` is a no-op.
+      result(nil)
     case "isHandled":
       onWorker(result) { HandledMarker.isHandled() }
     case "markHandled":

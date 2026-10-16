@@ -1,3 +1,36 @@
+## 0.2.0
+
+**Behaviour change:** `readOnce()` no longer re-delivers an old referrer to
+an install that existed before the plugin did (#30).
+
+- `readOnce({treatUpgradesAsHandled = true})`: on Android, an install that
+  was updated since it was installed, and whose first start with the plugin
+  came after that update, is marked handled and gets `null`. Before, the
+  first launch after an app adopted the plugin in an update re-delivered
+  Play's referrer, up to 90 days old, to every existing user. The plugin now
+  records its first start in `noBackupFilesDir`. Pass `false` for the 0.1
+  behaviour.
+  - An install that started on 0.1.x counts as adopted in an update on its
+    first 0.2.0 launch (0.1.x kept no first-seen record) and is marked
+    handled. It already had its first launch under 0.1.x. Pass
+    `treatUpgradesAsHandled: false` if an app on 0.1.x still needs that
+    install's referrer.
+- `readOnce({maxClickAge})`: a Play click older than the limit is marked
+  handled. Uses `clickedAtServer` when reported, else `clickedAt`; an
+  unknown click time is never stale. Default: no limit.
+- `readOnce({pastInstallFlow})`: the app's own "past the install flow" check;
+  `true` marks the install handled without a Play read. README recipe:
+  require signed in **and** a first run completed on this device, with the
+  first-run flag kept out of backups.
+- `InstallAttribution.lastSkipReason` (`ReadOnceSkip`) says why `readOnce()`
+  returned `null`.
+- `InstallAttribution.adoptExistingState(alreadyHandled:)`: one-time
+  migration from referrer handling an app shipped before the plugin.
+- `InstallAttribution.installFacts()` and `InstallFacts`. Platform
+  implementations get a default `installFacts()` that returns `null`.
+- Android: `markHandled()` keeps an existing marker instead of rewriting it.
+- iOS: `treatUpgradesAsHandled` and `maxClickAge` are no-ops.
+
 ## 0.1.2
 
 - Fix: `InstallReferrer.deepLink()` and `InstallReferrer.resolveDeepLink()`

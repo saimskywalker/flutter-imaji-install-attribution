@@ -40,6 +40,12 @@ void main() {
 - The override lives inside an `assert`, so **profile and release builds
   ignore it** and always ask the platform. A forgotten call cannot ship.
 - `InstallAttribution.debugClearOverride()` removes it.
+- `readOnce()` still applies its first-launch-only checks to an override.
+  On a device that had the app installed **before** you added the plugin,
+  the first debug run with it looks like an upgrade: `readOnce()` returns
+  `null` with `lastSkipReason == ReadOnceSkip.adoptedInUpdate`. Uninstall
+  once, or pass `treatUpgradesAsHandled: false` while testing. Use a
+  `debugOverride` `clickedAt` within your `maxClickAge`.
 
 The example app has buttons for each of these.
 

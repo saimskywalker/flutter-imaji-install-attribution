@@ -16,6 +16,7 @@
 library;
 
 export 'src/install_attribution.dart';
+export 'src/install_facts.dart';
 export 'src/install_referrer.dart';
 export 'src/install_source.dart';
 export 'src/method_channel.dart' show MethodChannelInstallAttribution;

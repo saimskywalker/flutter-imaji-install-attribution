@@ -46,6 +46,20 @@ class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHan
             Thread(runnable, "imaji-install-attribution").apply { isDaemon = true }
         }
         worker = executor
+        // Record the plugin's first start on this install before anything
+        // can ask for it. The executor is single-threaded, so a later
+        // `installFacts` call always sees this write.
+        try {
+            executor.execute {
+                try {
+                    firstSeen(appContext).getOrCreate(System.currentTimeMillis())
+                } catch (_: Throwable) {
+                    // Retried by `installFacts`.
+                }
+            }
+        } catch (_: Throwable) {
+            // Executor already rejected: nothing to record.
+        }
         reader = ReferrerReader(
             newClient = { PlayReferrerClient(appContext) },
             isPlayStoreInstalled = { InstallSourceReader.isPlayStoreInstalled(appContext) },
@@ -73,6 +87,9 @@ class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHan
             when (call.method) {
                 "read" -> read(call, reply)
                 "installSource" -> withContext(reply) { InstallSourceReader.read(it) }
+                "installFacts" -> withContext(reply) {
+                    InstallFactsReader.read(it, firstSeen(it), System.currentTimeMillis())
+                }
                 "isHandled" -> withContext(reply) { marker(it).isHandled() }
                 "markHandled" -> withContext(reply) { marker(it).markHandled(); true }
                 "clearHandled" -> withContext(reply) { marker(it).clear(); true }
@@ -117,6 +134,8 @@ class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHan
     }
 
     private fun marker(ctx: Context) = HandledMarker(ctx.noBackupFilesDir)
+
+    private fun firstSeen(ctx: Context) = FirstSeenRecord(ctx.noBackupFilesDir)
 
     /** Replies at most once, on the main thread, and only to the same engine. */
     private fun guardedReply(result: MethodChannel.Result): (Any?) -> Unit {
