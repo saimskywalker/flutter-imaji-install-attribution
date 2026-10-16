@@ -151,7 +151,9 @@ Concurrent calls share one platform read. The default timeout is 10 seconds.
   in-app path, or `null`. Only paths under an allowlisted prefix pass
   (`/items` allows `/items` and `/items/42`, never `/itemsX`). Absolute URLs
   are refused unless they are `https` on a listed host; `//host`, `..`,
-  backslashes and control characters are always refused.
+  backslashes, control characters and percent escapes that are malformed or
+  not UTF-8 (`%ZZ`, `%FF`) are always refused. It never throws: the referrer
+  is input anyone can craft, so anything that is not a safe path is `null`.
 
 ### Consume once
 

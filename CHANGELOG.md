@@ -1,3 +1,14 @@
+## 0.1.2
+
+- Fix: `InstallReferrer.deepLink()` and `InstallReferrer.resolveDeepLink()`
+  never throw. A value with a percent escape that is not UTF-8 (`%FF`,
+  `%C3`, a truncated `%E2%82`) threw `FormatException` instead of returning
+  `null`; it is now refused, like a malformed escape (`%`, `%ZZ`), which
+  `Uri.parse` used to rewrite silently into `%25`. The check covers the
+  query and fragment too, so a returned link's own `queryParameters` can no
+  longer throw. A fuzz test over every `%XX` escape and random input pins
+  it.
+
 ## 0.1.1
 
 Documentation only; no API or behaviour change.

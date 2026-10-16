@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'imaji_install_attribution'
-  s.version          = '0.1.1'
+  s.version          = '0.1.2'
   s.summary          = 'Install attribution for Flutter: Apple AdServices token on iOS.'
   s.description      = <<-DESC
 Flutter plugin that reads the Google Play Install Referrer on Android and the
