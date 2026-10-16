@@ -15,7 +15,9 @@ internal class HandledMarker(directory: File) {
 
     fun isHandled(): Boolean = file.exists()
 
+    /** Idempotent: an existing marker is kept as it is. */
     fun markHandled() {
+        if (file.exists()) return
         file.parentFile?.mkdirs()
         file.writeText(System.currentTimeMillis().toString())
     }
