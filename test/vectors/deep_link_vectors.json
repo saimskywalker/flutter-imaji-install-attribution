@@ -1,0 +1,374 @@
+{
+  "about": "Language-neutral vectors for the app half of the deferred-deep-link contract: how imaji_install_attribution decodes a Play install referrer and which in-app link it routes. Each row gives the referrer exactly as Play hands it to the app (outer layer removed). A parser in any language must decode the value of `key` once per `decoding` to `value`, then route `expected_deep_link`, or find none, for the reason in `rejection`. Rows with a `path` were built by encoding the path once into the referrer and the referrer once into the store URL; a link builder must reproduce `referrer_as_play_returns_it`, `play_url_referrer_param` and `play_store_url` from it byte for byte.",
+  "format_version": 1,
+  "package_name": "com.example.app",
+  "key": "utm_content",
+  "allow": [
+    "/invite",
+    "/items/",
+    "/tags/"
+  ],
+  "hosts": [
+    "example.com"
+  ],
+  "rule": [
+    "1. Split the referrer on '&' and skip empty pieces; split each piece at its first '='; a piece with no '=' is a key with an empty value.",
+    "2. Decode key and value exactly once: 'form' = application/x-www-form-urlencoded ('+' is a space, %XX is UTF-8); 'rfc3986' = %XX only ('+' stays '+'). A piece whose escapes do not decode is kept as written. The first occurrence of a key wins.",
+    "3. Then check the value of `key`, trimmed of surrounding whitespace, in this order; the first failing check is the rejection.",
+    "absent: missing, blank or '(not set)'.",
+    "unsafe: a backslash or a control character (U+0000-U+001F, U+007F).",
+    "undecodable: any %XX escape that is malformed or not UTF-8, anywhere in the value.",
+    "unsafe: the value starts with '//' (protocol-relative).",
+    "notAPath: a scheme other than http/https. hostNotAllowed: http, or https on a host not in `hosts`, or with a port or user info. An accepted https URL keeps only its path, query and fragment.",
+    "looksDoubleEncoded: no scheme and no leading '/', but decoding once more gives a value that passes every check. Never repaired. Otherwise notAPath.",
+    "notAPath: an empty path. unsafe: a path starting with '//', or a '.' or '..' segment (also when encoded, '%2e%2e').",
+    "notAllowlisted: no `allow` prefix matches. A prefix matches itself and anything below it: '/items' allows '/items' and '/items/42', never '/itemsX'.",
+    "expected_deep_link is the accepted link as an RFC 3986 URI reference: characters outside the allowed set are percent-encoded (a space as %20, non-ASCII as UTF-8 escapes), and escapes already present are kept as written."
+  ],
+  "vectors": [
+    {
+      "name": "a path, encoded once",
+      "path": "/invite/abc123",
+      "referrer_as_play_returns_it": "utm_content=%2Finvite%2Fabc123",
+      "play_url_referrer_param": "utm_content%3D%252Finvite%252Fabc123",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Finvite%252Fabc123",
+      "decoding": "form",
+      "value": "/invite/abc123",
+      "expected_deep_link": "/invite/abc123",
+      "rejection": null
+    },
+    {
+      "name": "query and fragment are kept",
+      "path": "/items/42?ref=mail#top",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F42%3Fref%3Dmail%23top",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F42%253Fref%253Dmail%2523top",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F42%253Fref%253Dmail%2523top",
+      "decoding": "form",
+      "value": "/items/42?ref=mail#top",
+      "expected_deep_link": "/items/42?ref=mail#top",
+      "rejection": null
+    },
+    {
+      "name": "& and = inside the query",
+      "path": "/items/42?a=1&b=2",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F42%3Fa%3D1%26b%3D2",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F42%253Fa%253D1%2526b%253D2",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F42%253Fa%253D1%2526b%253D2",
+      "decoding": "form",
+      "value": "/items/42?a=1&b=2",
+      "expected_deep_link": "/items/42?a=1&b=2",
+      "rejection": null
+    },
+    {
+      "name": "an encoded slash inside a segment stays one escape",
+      "path": "/tags/a%2Fb",
+      "referrer_as_play_returns_it": "utm_content=%2Ftags%2Fa%252Fb",
+      "play_url_referrer_param": "utm_content%3D%252Ftags%252Fa%25252Fb",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Ftags%252Fa%25252Fb",
+      "decoding": "form",
+      "value": "/tags/a%2Fb",
+      "expected_deep_link": "/tags/a%2Fb",
+      "rejection": null
+    },
+    {
+      "name": "a literal percent, already escaped as %25",
+      "path": "/items/100%25",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F100%2525",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F100%252525",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F100%252525",
+      "decoding": "form",
+      "value": "/items/100%25",
+      "expected_deep_link": "/items/100%25",
+      "rejection": null
+    },
+    {
+      "name": "a literal + in the path",
+      "path": "/items/a+b",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2Fa%2Bb",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252Fa%252Bb",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252Fa%252Bb",
+      "decoding": "form",
+      "value": "/items/a+b",
+      "expected_deep_link": "/items/a+b",
+      "rejection": null
+    },
+    {
+      "name": "a space in the path",
+      "path": "/items/a b",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2Fa+b",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252Fa%2Bb",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252Fa%2Bb",
+      "decoding": "form",
+      "value": "/items/a b",
+      "expected_deep_link": "/items/a%20b",
+      "rejection": null
+    },
+    {
+      "name": "non-ASCII",
+      "path": "/items/café",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2Fcaf%C3%A9",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252Fcaf%25C3%25A9",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252Fcaf%25C3%25A9",
+      "decoding": "form",
+      "value": "/items/café",
+      "expected_deep_link": "/items/caf%C3%A9",
+      "rejection": null
+    },
+    {
+      "name": "an allowlisted https host yields its path only",
+      "path": "https://example.com/items/5?x=1",
+      "referrer_as_play_returns_it": "utm_content=https%3A%2F%2Fexample.com%2Fitems%2F5%3Fx%3D1",
+      "play_url_referrer_param": "utm_content%3Dhttps%253A%252F%252Fexample.com%252Fitems%252F5%253Fx%253D1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3Dhttps%253A%252F%252Fexample.com%252Fitems%252F5%253Fx%253D1",
+      "decoding": "form",
+      "value": "https://example.com/items/5?x=1",
+      "expected_deep_link": "/items/5?x=1",
+      "rejection": null
+    },
+    {
+      "name": "the prefix itself",
+      "path": "/invite",
+      "referrer_as_play_returns_it": "utm_content=%2Finvite",
+      "play_url_referrer_param": "utm_content%3D%252Finvite",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Finvite",
+      "decoding": "form",
+      "value": "/invite",
+      "expected_deep_link": "/invite",
+      "rejection": null
+    },
+    {
+      "name": "inner value encoded twice",
+      "referrer_as_play_returns_it": "utm_content=%252Finvite%252Fabc123",
+      "decoding": "form",
+      "value": "%2Finvite%2Fabc123",
+      "expected_deep_link": null,
+      "rejection": "looksDoubleEncoded"
+    },
+    {
+      "name": "inner value not encoded: works by accident",
+      "referrer_as_play_returns_it": "utm_content=/invite/abc123",
+      "decoding": "form",
+      "value": "/invite/abc123",
+      "expected_deep_link": "/invite/abc123",
+      "rejection": null
+    },
+    {
+      "name": "inner value not encoded: & truncates the query",
+      "referrer_as_play_returns_it": "utm_content=/items/42?a=1&b=2",
+      "decoding": "form",
+      "value": "/items/42?a=1",
+      "expected_deep_link": "/items/42?a=1",
+      "rejection": null
+    },
+    {
+      "name": "inner value not encoded: a literal + becomes a space (form)",
+      "referrer_as_play_returns_it": "utm_content=/items/a+b",
+      "decoding": "form",
+      "value": "/items/a b",
+      "expected_deep_link": "/items/a%20b",
+      "rejection": null
+    },
+    {
+      "name": "inner value not encoded: a literal + stays + (rfc3986)",
+      "referrer_as_play_returns_it": "utm_content=/items/a+b",
+      "decoding": "rfc3986",
+      "value": "/items/a+b",
+      "expected_deep_link": "/items/a+b",
+      "rejection": null
+    },
+    {
+      "name": "rfc3986 decodes %XX like form does",
+      "referrer_as_play_returns_it": "utm_content=%2Finvite%2Fabc123",
+      "decoding": "rfc3986",
+      "value": "/invite/abc123",
+      "expected_deep_link": "/invite/abc123",
+      "rejection": null
+    },
+    {
+      "name": "key missing",
+      "referrer_as_play_returns_it": "utm_source=newsletter",
+      "decoding": "form",
+      "value": null,
+      "expected_deep_link": null,
+      "rejection": "absent"
+    },
+    {
+      "name": "empty value",
+      "referrer_as_play_returns_it": "utm_content=",
+      "decoding": "form",
+      "value": "",
+      "expected_deep_link": null,
+      "rejection": "absent"
+    },
+    {
+      "name": "Play's (not set)",
+      "referrer_as_play_returns_it": "utm_content=(not%20set)",
+      "decoding": "form",
+      "value": "(not set)",
+      "expected_deep_link": null,
+      "rejection": "absent"
+    },
+    {
+      "name": "outside the allowlist",
+      "path": "/admin",
+      "referrer_as_play_returns_it": "utm_content=%2Fadmin",
+      "play_url_referrer_param": "utm_content%3D%252Fadmin",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fadmin",
+      "decoding": "form",
+      "value": "/admin",
+      "expected_deep_link": null,
+      "rejection": "notAllowlisted"
+    },
+    {
+      "name": "a prefix lookalike",
+      "path": "/invites",
+      "referrer_as_play_returns_it": "utm_content=%2Finvites",
+      "play_url_referrer_param": "utm_content%3D%252Finvites",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Finvites",
+      "decoding": "form",
+      "value": "/invites",
+      "expected_deep_link": null,
+      "rejection": "notAllowlisted"
+    },
+    {
+      "name": "a relative path",
+      "path": "invite/abc123",
+      "referrer_as_play_returns_it": "utm_content=invite%2Fabc123",
+      "play_url_referrer_param": "utm_content%3Dinvite%252Fabc123",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3Dinvite%252Fabc123",
+      "decoding": "form",
+      "value": "invite/abc123",
+      "expected_deep_link": null,
+      "rejection": "notAPath"
+    },
+    {
+      "name": "a non-web scheme",
+      "path": "intent://items/1",
+      "referrer_as_play_returns_it": "utm_content=intent%3A%2F%2Fitems%2F1",
+      "play_url_referrer_param": "utm_content%3Dintent%253A%252F%252Fitems%252F1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3Dintent%253A%252F%252Fitems%252F1",
+      "decoding": "form",
+      "value": "intent://items/1",
+      "expected_deep_link": null,
+      "rejection": "notAPath"
+    },
+    {
+      "name": "a foreign host",
+      "path": "https://evil.example/items/1",
+      "referrer_as_play_returns_it": "utm_content=https%3A%2F%2Fevil.example%2Fitems%2F1",
+      "play_url_referrer_param": "utm_content%3Dhttps%253A%252F%252Fevil.example%252Fitems%252F1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3Dhttps%253A%252F%252Fevil.example%252Fitems%252F1",
+      "decoding": "form",
+      "value": "https://evil.example/items/1",
+      "expected_deep_link": null,
+      "rejection": "hostNotAllowed"
+    },
+    {
+      "name": "http on an allowlisted host",
+      "path": "http://example.com/items/1",
+      "referrer_as_play_returns_it": "utm_content=http%3A%2F%2Fexample.com%2Fitems%2F1",
+      "play_url_referrer_param": "utm_content%3Dhttp%253A%252F%252Fexample.com%252Fitems%252F1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3Dhttp%253A%252F%252Fexample.com%252Fitems%252F1",
+      "decoding": "form",
+      "value": "http://example.com/items/1",
+      "expected_deep_link": null,
+      "rejection": "hostNotAllowed"
+    },
+    {
+      "name": "a port on an allowlisted host",
+      "path": "https://example.com:8443/items/1",
+      "referrer_as_play_returns_it": "utm_content=https%3A%2F%2Fexample.com%3A8443%2Fitems%2F1",
+      "play_url_referrer_param": "utm_content%3Dhttps%253A%252F%252Fexample.com%253A8443%252Fitems%252F1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3Dhttps%253A%252F%252Fexample.com%253A8443%252Fitems%252F1",
+      "decoding": "form",
+      "value": "https://example.com:8443/items/1",
+      "expected_deep_link": null,
+      "rejection": "hostNotAllowed"
+    },
+    {
+      "name": "protocol-relative",
+      "path": "//evil.example/items/1",
+      "referrer_as_play_returns_it": "utm_content=%2F%2Fevil.example%2Fitems%2F1",
+      "play_url_referrer_param": "utm_content%3D%252F%252Fevil.example%252Fitems%252F1",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252F%252Fevil.example%252Fitems%252F1",
+      "decoding": "form",
+      "value": "//evil.example/items/1",
+      "expected_deep_link": null,
+      "rejection": "unsafe"
+    },
+    {
+      "name": "a dot-dot segment",
+      "path": "/items/../admin",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F..%2Fadmin",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F..%252Fadmin",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F..%252Fadmin",
+      "decoding": "form",
+      "value": "/items/../admin",
+      "expected_deep_link": null,
+      "rejection": "unsafe"
+    },
+    {
+      "name": "an encoded dot-dot segment",
+      "path": "/items/%2e%2e/admin",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F%252e%252e%2Fadmin",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F%25252e%25252e%252Fadmin",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F%25252e%25252e%252Fadmin",
+      "decoding": "form",
+      "value": "/items/%2e%2e/admin",
+      "expected_deep_link": null,
+      "rejection": "unsafe"
+    },
+    {
+      "name": "a backslash",
+      "path": "/items\\..\\admin",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%5C..%5Cadmin",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%255C..%255Cadmin",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%255C..%255Cadmin",
+      "decoding": "form",
+      "value": "/items\\..\\admin",
+      "expected_deep_link": null,
+      "rejection": "unsafe"
+    },
+    {
+      "name": "a control character inside the path",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%0A%2F1",
+      "decoding": "form",
+      "value": "/items\n/1",
+      "expected_deep_link": null,
+      "rejection": "unsafe"
+    },
+    {
+      "name": "an escape that is not UTF-8",
+      "path": "/items/%FF",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F%25FF",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F%2525FF",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F%2525FF",
+      "decoding": "form",
+      "value": "/items/%FF",
+      "expected_deep_link": null,
+      "rejection": "undecodable"
+    },
+    {
+      "name": "a truncated multi-byte escape",
+      "path": "/items/%E2%82",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F%25E2%2582",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F%2525E2%252582",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F%2525E2%252582",
+      "decoding": "form",
+      "value": "/items/%E2%82",
+      "expected_deep_link": null,
+      "rejection": "undecodable"
+    },
+    {
+      "name": "a malformed escape",
+      "path": "/items/%ZZ",
+      "referrer_as_play_returns_it": "utm_content=%2Fitems%2F%25ZZ",
+      "play_url_referrer_param": "utm_content%3D%252Fitems%252F%2525ZZ",
+      "play_store_url": "https://play.google.com/store/apps/details?id=com.example.app&referrer=utm_content%3D%252Fitems%252F%2525ZZ",
+      "decoding": "form",
+      "value": "/items/%ZZ",
+      "expected_deep_link": null,
+      "rejection": "undecodable"
+    }
+  ]
+}

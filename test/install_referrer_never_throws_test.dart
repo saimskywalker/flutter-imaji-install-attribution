@@ -30,6 +30,11 @@ void main() {
     r.toString();
     r.hashCode;
     check(r.deepLink(allow: allow, hosts: hosts), raw);
+    check(r.deepLinkResult(allow: allow, hosts: hosts).uriOrNull, raw);
+    final rfc = r.withDecoding(ReferrerDecoding.rfc3986);
+    rfc.parameters;
+    rfc.isOrganic;
+    check(rfc.deepLink(allow: allow, hosts: hosts), raw);
     check(r.deepLink(key: 'link', allow: allow), raw);
     // The raw string itself as a value, without the parameter decode.
     check(InstallReferrer.resolveDeepLink(raw, allow: allow), raw);
@@ -175,12 +180,25 @@ void main() {
             allow: allow,
             hosts: hosts,
           )?.toString(),
-          legacyResolve(value, allow, hosts)?.toString(),
+          // 0.2.0 refuses `.`/`..` segments as written; 0.1.1 let
+          // `Uri.parse` normalise them away first.
+          hasDotSegment(value)
+              ? null
+              : legacyResolve(value, allow, hosts)?.toString(),
           reason: value,
         );
       }
     });
   });
+}
+
+/// Whether [value], before any `?` or `#`, has a `.` or `..` segment.
+bool hasDotSegment(String value) {
+  final end = value.indexOf(RegExp('[?#]'));
+  return (end < 0 ? value : value.substring(0, end))
+      .trim()
+      .split('/')
+      .any((segment) => segment == '.' || segment == '..');
 }
 
 /// `resolveDeepLink` exactly as 0.1.1 shipped it, for the differential test.
