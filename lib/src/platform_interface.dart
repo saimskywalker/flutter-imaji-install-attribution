@@ -66,6 +66,17 @@ abstract class ImajiInstallAttributionPlatform extends PlatformInterface {
     throw UnimplementedError('markHandled() has not been implemented.');
   }
 
+  /// How many reads [recordFailedRead] has counted on this install. Stored
+  /// next to the consume-once marker and cleared with it.
+  Future<int> failedReads() {
+    throw UnimplementedError('failedReads() has not been implemented.');
+  }
+
+  /// Adds one failed read to the persisted count and returns the new count.
+  Future<int> recordFailedRead() {
+    throw UnimplementedError('recordFailedRead() has not been implemented.');
+  }
+
   /// Removes the consume-once marker. Returns `true` when it was removed.
   Future<bool> clearHandled() {
     throw UnimplementedError('clearHandled() has not been implemented.');

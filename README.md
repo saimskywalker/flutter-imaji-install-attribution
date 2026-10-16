@@ -31,11 +31,11 @@ existing Flutter referrer plugins share a few problems:
 | Problem | What this plugin does |
 |---|---|
 | They apply the Kotlin Gradle Plugin, which Flutter warns will fail to build in future releases (AGP 9 Built-in Kotlin) | Built-in Kotlin from day one. Flutter's check is a text match on the plugin's build file, and there is nothing to match |
-| The Binder call `getInstallReferrer()` runs on the platform thread, so a slow Play Store freezes the UI (ANR) | It runs on a background thread, with a timeout (default 10 s) |
+| The Binder call `getInstallReferrer()` runs on the platform thread, so a slow Play Store freezes the UI (ANR) | Every Binder call in the read (the Play Store presence check and `getInstallReferrer()`) runs on a background thread, with a timeout (default 10 s) |
 | Play can answer `OK` with details whose bundle is null; reading them is a fatal `NullPointerException` | Every read is guarded: `Unavailable(nullDetails)` |
 | `DeadObjectException`, `PERMISSION_ERROR`, `FEATURE_NOT_SUPPORTED`, … arrive as `PlatformException` strings, or crash the app | Each one is a distinct `UnavailableReason` |
 | A second `SERVICE_DISCONNECTED` can leave the call unanswered forever | One reconnect, then `Unavailable(serviceDisconnected)`; a timeout bounds everything |
-| Nothing stops a referrer from being acted on twice | Opt-in consume-once store: `readOnce()` + `markHandled()` |
+| Nothing stops a referrer from being acted on twice, and a failing read retries on every launch forever | `claimOnce()`: one claim per process, a persisted retry budget, first-launch-only semantics |
 | Deep-link extraction is left to you, and decoding twice corrupts `%2F` paths | `referrer.deepLink(allow: [...])` decodes exactly once and enforces an allowlist |
 | "Unknown installer" errors for Samsung restores and other stores | `InstallSource` maps the installer package: Play, Galaxy Store, AppGallery, Amazon, side-load, restore |
 | No way to test without publishing | `debugOverride()` and a real [testing guide](TESTING.md) |
@@ -46,23 +46,25 @@ existing Flutter referrer plugins share a few problems:
 import 'package:imaji_install_attribution/imaji_install_attribution.dart';
 
 Future<void> routeFromInstall(GoRouter router) async {
-  final result = await InstallAttribution.readOnce(); // null once handled
-  switch (result) {
-    case null:
-      return; // handled on an earlier launch
+  // null once handled, while another startup path holds the claim, or after
+  // a failed read (retried on the next launch, up to a budget).
+  final claim = await InstallAttribution.claimOnce();
+  if (claim == null) return;
+  switch (claim.result) {
     case Attributed(:final referrer?):
       final link = referrer.deepLink(allow: ['/items/', '/profile/']);
       if (link != null) router.go(link.toString());
     case Attributed(:final token?):
       await sendToServer(token); // iOS: resolve with Apple's attribution API
-    case Attributed() || Organic():
+    case _:
       break; // installed with no campaign
-    case Unavailable(:final reason):
-      log('No attribution: ${reason.name}'); // typed, never thrown
   }
-  await InstallAttribution.markHandled();
+  await claim.complete(); // never again on this install
 }
 ```
+
+Failures are typed, never thrown: `InstallAttribution.lastSkipReason` and
+`lastFailure` say why `claimOnce()` returned `null`.
 
 That is the whole integration: no manifest edits, no `Info.plist` keys, no
 App Tracking Transparency prompt.
@@ -168,7 +170,8 @@ Google's guidance is to act on the referrer only on the first execution
 after install. Play keeps returning the same referrer for 90 days, so
 "unhandled" alone is not enough. `readOnce()` has three options for that.
 Each one that applies marks the install handled and returns `null`, and
-`InstallAttribution.lastSkipReason` (a `ReadOnceSkip`) says why. A
+`InstallAttribution.lastSkipReason` (a `ReadOnceSkip`) says why. `claimOnce()`
+takes the same options. A
 suppressed referrer is silent: nothing is returned, so nothing can route or
 show a banner about it.
 
@@ -251,6 +254,36 @@ final result = await InstallAttribution.readOnce(
 
 If the check throws, `readOnce()` returns `null` without marking anything,
 and the next launch asks again.
+
+### `claimOnce`: one claim, a retry budget
+
+`claimOnce()` is `readOnce()` with three guarantees for apps that have more
+than one startup path:
+
+- **One claim per process.** While a claim is held, every other
+  `claimOnce()` in the process returns `null` (`claimedElsewhere`). A link
+  cannot be dispatched twice by a first-frame callback and a later "router
+  ready" path. The lock is taken before the first `await`.
+  `claim.complete()` marks the install handled. `claim.release()` leaves it
+  unhandled, for when the link did not land (no router, or a newer tapped
+  link took precedence). The next launch, or a later `claimOnce()`, then
+  tries again.
+- **A retry budget across launches.** A failed read returns `null`
+  (`readFailed`, details in `lastFailure`). The failure is counted in a file
+  next to the handled marker, which survives process death, is excluded
+  from backups and is cleared by `clearHandled()`. After `maxFailedReads`
+  failures the install is marked handled (`budgetSpent`), and no later
+  launch binds to the Play Store again.
+- **Terminal reasons** in `terminal` mark the install handled on first sight
+  (`terminalFailure`).
+
+| Parameter | Default | Why |
+|---|---|---|
+| `maxFailedReads` | `3` | A failed Android read costs a service bind and up to the timeout (10 s) of background work, on every launch, forever. Three launches separate a transient failure (Play updating itself, a busy device) from a device that cannot answer. Raise it if first launches are often offline. |
+| `terminal` | `{playStoreMissing}` | Without the Play Store there is no Play install, and so no referrer, even if Play is installed later. Add `permissionError` if you would rather not retry a manifest problem; pass `const {}` to count everything against the budget. |
+
+`readOnce()` keeps its 0.1 shape (no lock, no budget) for apps that manage
+those themselves.
 
 ### `InstallSource`
 

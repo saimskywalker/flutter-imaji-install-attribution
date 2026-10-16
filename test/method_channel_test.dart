@@ -241,6 +241,23 @@ void main() {
       expect(result.message, 'X: nope');
     });
 
+    test('the failed-read count is an int, and anything else throws', () async {
+      answer(
+        (call) => switch (call.method) {
+          'failedReads' => 2,
+          'recordFailedRead' => 3,
+          _ => null,
+        },
+      );
+      expect(await platform.failedReads(), 2);
+      expect(await platform.recordFailedRead(), 3);
+      answer((_) => null); // iOS could not store it.
+      expect(platform.recordFailedRead(), throwsStateError);
+      // The public API turns that into "unknown", not a throw.
+      ImajiInstallAttributionPlatform.instance = platform;
+      expect(await InstallAttribution.failedReads(), isNull);
+    });
+
     test('marker methods map replies and failures to bools', () async {
       answer((call) => call.method == 'isHandled' ? true : null);
       expect(await platform.isHandled(), isTrue);
