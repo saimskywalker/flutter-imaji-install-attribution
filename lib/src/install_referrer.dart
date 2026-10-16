@@ -83,7 +83,12 @@ class InstallReferrer {
   /// again. Absolute URLs are refused unless they are `https` and their host
   /// is listed in [hosts], in which case only the path, query and fragment
   /// are returned. Protocol-relative values (`//host/...`), backslashes,
-  /// control characters and `.`/`..` segments are always refused.
+  /// control characters and `.`/`..` segments are always refused, and so is
+  /// any value with a malformed percent escape (`%`, `%ZZ`) or one that does
+  /// not decode as UTF-8 (`%FF`, `%C3`, `%E2%82`).
+  ///
+  /// **Never throws.** The referrer is input anyone can craft, so every
+  /// value that is not a safe in-app path is `null`, not an exception.
   Uri? deepLink({
     String key = 'utm_content',
     required Iterable<String> allow,
@@ -91,6 +96,8 @@ class InstallReferrer {
   }) => resolveDeepLink(parameters[key], allow: allow, hosts: hosts);
 
   /// The validation behind [deepLink], for a value you already extracted.
+  ///
+  /// **Never throws**; see [deepLink] for what is refused.
   static Uri? resolveDeepLink(
     String? value, {
     required Iterable<String> allow,
@@ -100,6 +107,14 @@ class InstallReferrer {
     final text = value.trim();
     if (text.isEmpty || text.contains(r'\')) return null;
     if (text.codeUnits.any((c) => c < 0x20 || c == 0x7f)) return null;
+    // Every percent escape anywhere in the value (path, query, fragment)
+    // must be well formed and decode as UTF-8. `Uri.decodeComponent` throws
+    // `ArgumentError` for a malformed escape (`%`, `%ZZ`) but
+    // `FormatException` for a well-formed one that is not UTF-8 (`%FF`), so
+    // both are caught. Without this, `Uri.parse` would quietly turn a bare
+    // `%` into `%25`, and a returned link with `%FF` in its query would
+    // throw later, from the app's own `queryParameters`.
+    if (!_decodesCleanly(text)) return null;
 
     final Uri uri;
     try {
@@ -124,10 +139,12 @@ class InstallReferrer {
     final path = uri.path;
     if (!path.startsWith('/') || path.startsWith('//')) return null;
     for (final segment in path.split('/')) {
-      String decoded;
+      final String decoded;
       try {
         decoded = Uri.decodeComponent(segment);
       } on ArgumentError {
+        return null;
+      } on FormatException {
         return null;
       }
       if (decoded == '.' || decoded == '..') return null;
@@ -141,6 +158,47 @@ class InstallReferrer {
       fragment: uri.hasFragment ? uri.fragment : null,
     );
   }
+
+  static bool _decodesCleanly(String text) =>
+      _decodeComponentOrNull(text) != null;
+
+  /// `Uri.decodeComponent`, but `null` instead of a throw, and tolerant of
+  /// unescaped non-ASCII text. `Uri.decodeComponent` refuses a raw `é`
+  /// ("Illegal percent encoding"), while a value such as `/items/café` is a
+  /// valid path that `Uri.parse` encodes, so non-ASCII runs are
+  /// percent-encoded first and only the escapes are judged. A lone UTF-16
+  /// surrogate is not text at all, and is refused: `Uri` would encode it
+  /// into a link whose own `queryParameters` then throw.
+  static String? _decodeComponentOrNull(String text) {
+    if (_hasLoneSurrogate(text)) return null;
+    try {
+      final ascii = text.replaceAllMapped(
+        _nonAscii,
+        (match) => Uri.encodeComponent(match[0]!),
+      );
+      return Uri.decodeComponent(ascii);
+    } on ArgumentError {
+      return null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static bool _hasLoneSurrogate(String text) {
+    for (var i = 0; i < text.length; i++) {
+      final unit = text.codeUnitAt(i);
+      if (unit >= 0xD800 && unit <= 0xDBFF) {
+        final next = i + 1 < text.length ? text.codeUnitAt(i + 1) : 0;
+        if (next < 0xDC00 || next > 0xDFFF) return true;
+        i++;
+      } else if (unit >= 0xDC00 && unit <= 0xDFFF) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static final RegExp _nonAscii = RegExp(r'[^\x00-\x7F]+');
 
   static bool _matchesPrefix(String path, String prefix) {
     if (!prefix.startsWith('/')) return false;
