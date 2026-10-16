@@ -1,3 +1,8 @@
+## 0.1.1
+
+Packaging: shorter package description so pub.dev search shows it whole.
+No API change.
+
 ## 0.1.0
 
 First release.
