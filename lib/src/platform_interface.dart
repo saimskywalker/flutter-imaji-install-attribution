@@ -1,5 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'install_facts.dart';
 import 'install_source.dart';
 import 'method_channel.dart';
 import 'result.dart';
@@ -49,6 +50,11 @@ abstract class ImajiInstallAttributionPlatform extends PlatformInterface {
 
   /// Which package installed the app, or `null` when unknown.
   Future<InstallSource?> installSource() async => null;
+
+  /// What the device knows about this install, or `null` when the platform
+  /// has nothing to report (iOS, or an implementation that predates 0.2.0).
+  /// `null` turns `treatUpgradesAsHandled` into a no-op.
+  Future<InstallFacts?> installFacts() async => null;
 
   /// Whether [markHandled] was called on this install.
   Future<bool> isHandled() {

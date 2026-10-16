@@ -77,7 +77,7 @@ or add it to `pubspec.yaml` yourself:
 
 ```yaml
 dependencies:
-  imaji_install_attribution: ^0.1.0
+  imaji_install_attribution: ^0.2.0
 ```
 
 Requirements: Flutter 3.44+ / Dart 3.12+. Android minSdk 21. iOS 15
@@ -155,7 +155,7 @@ Concurrent calls share one platform read. The default timeout is 10 seconds.
   not UTF-8 (`%ZZ`, `%FF`) are always refused. It never throws: the referrer
   is input anyone can craft, so anything that is not a safe path is `null`.
 
-### Consume once
+### Consume once, on the first launch only
 
 `readOnce()` returns `null` after `markHandled()`. Nothing is marked
 automatically, so a crash between reading and routing does not lose the
@@ -163,6 +163,84 @@ link. The marker is a tiny file excluded from backups (`noBackupFilesDir` on
 Android, an excluded file in Application Support on iOS): an uninstall and
 reinstall starts unhandled again, which matches Play — a reinstall gets a
 fresh referrer. `isHandled()` and `clearHandled()` exist for debug menus.
+
+Google's guidance is to act on the referrer only on the first execution
+after install. Play keeps returning the same referrer for 90 days, so
+"unhandled" alone is not enough. `readOnce()` has three options for that.
+Each one that applies marks the install handled and returns `null`, and
+`InstallAttribution.lastSkipReason` (a `ReadOnceSkip`) says why. A
+suppressed referrer is silent: nothing is returned, so nothing can route or
+show a banner about it.
+
+| Option | Default | What it does |
+|---|---|---|
+| `treatUpgradesAsHandled` | `true` | An install that existed before the plugin is handled. That is an app updated since it was installed, where the plugin first ran after that update. Android only; it needs no Play Store call. |
+| `maxClickAge` | `null` (no limit) | A Play click older than this is handled. Uses Play's server clock (`clickedAtServer`) when reported, else `clickedAt`; an unknown click time is never stale. Pick the window your links are meant for, such as an invite's validity. |
+| `pastInstallFlow` | `null` | Your own "this user is past the install flow" check, asked before Play. See [the recipe](#route-only-while-the-user-is-still-in-the-install-flow). |
+
+```dart
+final result = await InstallAttribution.readOnce(
+  maxClickAge: const Duration(days: 7), // your link's lifetime
+  pastInstallFlow: () => session.isSignedIn && firstRunDoneOnThisDevice,
+);
+```
+
+**How upgrades are detected (Android).** The plugin records the first time
+it starts on an install, in `noBackupFilesDir`. `readOnce()` treats the
+install as an upgrade when two conditions both hold:
+
+- `PackageInfo.lastUpdateTime` is more than a minute after
+  `firstInstallTime`, so the app has been updated since it was installed.
+- The plugin's first start came after that update.
+
+A fresh install and an install that had the plugin from day one are never
+affected. Unknown facts never count as an upgrade. One known limit: an app
+installed from a link, never opened, and auto-updated before its first
+launch counts as an upgrade, so its link is skipped. Its click is at least
+as old as that update anyway. Pass `treatUpgradesAsHandled: false` to keep
+the 0.1 behaviour.
+
+**iOS.** There is no referrer to protect, so `treatUpgradesAsHandled` and
+`maxClickAge` are no-ops (the AdServices token carries no click time).
+`pastInstallFlow` is app state and applies on both platforms.
+
+### Route only while the user is still in the install flow
+
+A deferred link belongs to the install, sign-up and first-run flow. A
+reliable "past the install flow" check needs **both** halves:
+
+1. **Signed in.** Signed in alone is wrong: a reinstall that restores a
+   session (an account manager, a credential restore, a server that
+   remembers the device) is still a first run, and its link should route.
+2. **The first run already completed on this device.** Keep this flag out
+   of backups. Android Auto Backup and device-to-device transfer restore
+   `SharedPreferences` by default. A reinstall would then inherit "first
+   run done" and spend the link silently. Keep the flag in a file under
+   `noBackupFilesDir`, or exclude its preferences file from backup:
+
+```xml
+<!-- res/xml/data_extraction_rules.xml (Android 12+), referenced from
+     android:dataExtractionRules; mirror it in android:fullBackupContent
+     for Android 11 and lower. -->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="sharedpref" path="first_run.xml"/>
+  </cloud-backup>
+  <device-transfer>
+    <exclude domain="sharedpref" path="first_run.xml"/>
+  </device-transfer>
+</data-extraction-rules>
+```
+
+```dart
+final result = await InstallAttribution.readOnce(
+  pastInstallFlow: () async =>
+      await auth.isSignedIn() && await firstRun.completedOnThisDevice(),
+);
+```
+
+If the check throws, `readOnce()` returns `null` without marking anything,
+and the next launch asks again.
 
 ### `InstallSource`
 
@@ -201,6 +279,24 @@ it.
   Google Play installed has one; side-loads never do.
 
 ## Migrating from other plugins
+
+**If your app already shipped referrer handling, call `adoptExistingState`
+first.** Without it, an existing user can be routed to a stale link on the
+first launch after the update. For example, a user installed from
+`/invite/abc123` 40 days ago, and your previous code already routed that
+link. Play still returns the same referrer, and the plugin cannot see your
+old "done" flag. `treatUpgradesAsHandled` catches this case from the device
+alone, and your own flag makes it certain:
+
+```dart
+await InstallAttribution.adoptExistingState(
+  alreadyHandled: prefs.getBool('referrer_done') ?? false, // your old flag
+);
+final result = await InstallAttribution.readOnce();
+```
+
+`true` marks the install handled; `false` changes nothing. It is idempotent,
+so calling it on every launch is fine.
 
 ### From `play_install_referrer`
 
