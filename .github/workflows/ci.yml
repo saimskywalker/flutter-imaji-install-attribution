@@ -39,6 +39,28 @@ jobs:
       - name: Example widget test
         working-directory: example
         run: flutter test
+      - name: Package description is 60-180 characters
+        run: |
+          python3 - pubspec.yaml <<'PY'
+          import sys
+          lines = open(sys.argv[1]).read().splitlines()
+          i = next(n for n, l in enumerate(lines) if l.startswith("description:"))
+          head = lines[i].split(":", 1)[1].strip()
+          if head in (">-", ">", "|-", "|"):
+              parts = []
+              for l in lines[i + 1:]:
+                  if l.strip() and not l.startswith(" "):
+                      break
+                  parts.append(l.strip())
+              desc = " ".join(p for p in parts if p)
+          else:
+              desc = head.strip("\"'")
+          n = len(desc)
+          print(f"{sys.argv[1]}: description is {n} characters")
+          if not 60 <= n <= 180:
+              print(f"::error::pubspec description must be 60-180 characters for pub.dev, got {n}")
+              sys.exit(1)
+          PY
       - name: Publish dry run
         run: dart pub publish --dry-run
       - name: No Kotlin Gradle Plugin in the plugin build file
@@ -86,6 +108,28 @@ jobs:
         run: dart test
       - name: Example runs
         run: dart run example/imaji_referrer_builder_example.dart
+      - name: Package description is 60-180 characters
+        run: |
+          python3 - pubspec.yaml <<'PY'
+          import sys
+          lines = open(sys.argv[1]).read().splitlines()
+          i = next(n for n, l in enumerate(lines) if l.startswith("description:"))
+          head = lines[i].split(":", 1)[1].strip()
+          if head in (">-", ">", "|-", "|"):
+              parts = []
+              for l in lines[i + 1:]:
+                  if l.strip() and not l.startswith(" "):
+                      break
+                  parts.append(l.strip())
+              desc = " ".join(p for p in parts if p)
+          else:
+              desc = head.strip("\"'")
+          n = len(desc)
+          print(f"{sys.argv[1]}: description is {n} characters")
+          if not 60 <= n <= 180:
+              print(f"::error::pubspec description must be 60-180 characters for pub.dev, got {n}")
+              sys.exit(1)
+          PY
       - name: Publish dry run
         if: matrix.sdk == 'stable'
         run: dart pub publish --dry-run
