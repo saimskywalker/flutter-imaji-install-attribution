@@ -70,6 +70,19 @@ class MethodChannelInstallAttribution extends ImajiInstallAttributionPlatform {
   @override
   Future<bool> clearHandled() => _bool('clearHandled');
 
+  @override
+  Future<int> failedReads() => _int('failedReads');
+
+  @override
+  Future<int> recordFailedRead() => _int('recordFailedRead');
+
+  /// An unusable reply throws, so the caller can tell "unknown" from 0.
+  Future<int> _int(String method) async {
+    final reply = await channel.invokeMethod<Object?>(method);
+    if (reply is int) return reply;
+    throw StateError('Unexpected $method reply: ${reply.runtimeType}');
+  }
+
   Future<bool> _bool(String method) async {
     try {
       return await channel.invokeMethod<bool>(method) ?? false;

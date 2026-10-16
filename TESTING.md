@@ -64,7 +64,16 @@ The example app has buttons for each of these.
 
 Play keeps the referrer for **90 days** after install, and it does not change
 until the app is reinstalled. Reading it on every launch is allowed, but
-`readOnce()` + `markHandled()` saves the Binder call once you have acted on it.
+`claimOnce()` + `complete()` saves the Binder call once you have acted on it.
+
+On a device that cannot answer (no Play Store, a broken one, an emulator
+image with an old Play Store), `claimOnce()` reads at most `maxFailedReads`
+times (default 3), once per launch, and then marks the install handled.
+`playStoreMissing` marks it at once. To try again from a debug menu, call
+`clearHandled()`: it removes both the marker and the failed-read count. A
+second `claimOnce()` while the first claim is held returns `null` with
+`lastSkipReason == ReadOnceSkip.claimedElsewhere`. That is the in-process
+guarantee, not a bug.
 
 ## 3. Getting a real referrer from Play
 
@@ -199,8 +208,29 @@ class FakeAttribution extends ImajiInstallAttributionPlatform {
   @override
   Future<bool> markHandled() async => handled = true;
   @override
-  Future<bool> clearHandled() async => !(handled = false);
+  Future<bool> clearHandled() async {
+    handled = false;
+    failures = 0;
+    return true;
+  }
+
+  // Optional: the retry budget of claimOnce(). Without these two, claimOnce()
+  // still takes its in-process lock but counts no failures.
+  int failures = 0;
+  @override
+  Future<int> failedReads() async => failures;
+  @override
+  Future<int> recordFailedRead() async => ++failures;
+
+  // Optional: install facts for treatUpgradesAsHandled. The default (null)
+  // never suppresses.
+  @override
+  Future<InstallFacts?> installFacts() async => null;
 }
 
 setUp(() => ImajiInstallAttributionPlatform.instance = FakeAttribution());
 ```
+
+`claimOnce()`'s one-claim lock is process-wide. A test that takes a claim
+should end it with `complete()` or `release()`, or the next test's
+`claimOnce()` returns `null` (`claimedElsewhere`).

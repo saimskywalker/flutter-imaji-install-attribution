@@ -92,7 +92,13 @@ class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHan
                 }
                 "isHandled" -> withContext(reply) { marker(it).isHandled() }
                 "markHandled" -> withContext(reply) { marker(it).markHandled(); true }
-                "clearHandled" -> withContext(reply) { marker(it).clear(); true }
+                "clearHandled" -> withContext(reply) {
+                    marker(it).clear()
+                    failures(it).clear()
+                    true
+                }
+                "failedReads" -> withContext(reply) { failures(it).count() }
+                "recordFailedRead" -> withContext(reply) { failures(it).increment() }
                 else -> result.notImplemented()
             }
         } catch (error: Throwable) {
@@ -136,6 +142,8 @@ class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHan
     private fun marker(ctx: Context) = HandledMarker(ctx.noBackupFilesDir)
 
     private fun firstSeen(ctx: Context) = FirstSeenRecord(ctx.noBackupFilesDir)
+
+    private fun failures(ctx: Context) = FailedReadCounter(ctx.noBackupFilesDir)
 
     /** Replies at most once, on the main thread, and only to the same engine. */
     private fun guardedReply(result: MethodChannel.Result): (Any?) -> Unit {
