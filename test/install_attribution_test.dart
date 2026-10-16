@@ -243,6 +243,29 @@ void main() {
       },
     );
 
+    test('an install that started on 0.1.x counts as adopted on its first '
+        '0.2.0 launch', () async {
+      // 0.1.x kept no first-seen record: installed at T0 with 0.1.x, updated
+      // to 0.2.0 at T1, and the record is written on that first 0.2.0 launch.
+      final t1 = now.subtract(const Duration(days: 2));
+      fake.facts = InstallFacts(
+        firstInstalledAt: fortyDaysAgo,
+        lastUpdatedAt: t1,
+        pluginFirstSeenAt: now,
+      );
+      expect(fake.facts!.predatesPlugin, isTrue);
+      expect(await InstallAttribution.readOnce(), isNull);
+      expect(InstallAttribution.lastSkipReason, ReadOnceSkip.adoptedInUpdate);
+      expect(fake.handled, isTrue);
+
+      // The documented way out for an app that still needs that referrer.
+      await InstallAttribution.clearHandled();
+      expect(
+        await InstallAttribution.readOnce(treatUpgradesAsHandled: false),
+        same(oldLink),
+      );
+    });
+
     test('treatUpgradesAsHandled: false keeps the 0.1 behaviour', () async {
       fake.facts = InstallFacts(
         firstInstalledAt: fortyDaysAgo,

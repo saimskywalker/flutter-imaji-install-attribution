@@ -64,6 +64,10 @@ class InstallFacts {
   /// the plugin did. True only when the app has been updated since it was
   /// installed **and** the plugin first ran after that update. Unknown facts
   /// never count as an upgrade.
+  ///
+  /// 0.1.x kept no first-seen record, so an install that started on 0.1.x
+  /// also matches on its first 0.2.0 launch: that install already had its
+  /// first launch under 0.1.x.
   bool get predatesPlugin =>
       updatedSinceInstall == true && pluginArrivedWithLatestUpdate == true;
 

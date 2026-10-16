@@ -10,6 +10,11 @@ an install that existed before the plugin did (#30).
   Play's referrer, up to 90 days old, to every existing user. The plugin now
   records its first start in `noBackupFilesDir`. Pass `false` for the 0.1
   behaviour.
+  - An install that started on 0.1.x counts as adopted in an update on its
+    first 0.2.0 launch (0.1.x kept no first-seen record) and is marked
+    handled. It already had its first launch under 0.1.x. Pass
+    `treatUpgradesAsHandled: false` if an app on 0.1.x still needs that
+    install's referrer.
 - `readOnce({maxClickAge})`: a Play click older than the limit is marked
   handled. Uses `clickedAtServer` when reported, else `clickedAt`; an
   unknown click time is never stale. Default: no limit.
@@ -25,6 +30,8 @@ an install that existed before the plugin did (#30).
   implementations get a default `installFacts()` that returns `null`.
 - Android: `markHandled()` keeps an existing marker instead of rewriting it.
 - iOS: `treatUpgradesAsHandled` and `maxClickAge` are no-ops.
+
+## 0.1.2
 
 - Fix: `InstallReferrer.deepLink()` and `InstallReferrer.resolveDeepLink()`
   never throw. A value with a percent escape that is not UTF-8 (`%FF`,

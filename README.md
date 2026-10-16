@@ -193,12 +193,22 @@ install as an upgrade when two conditions both hold:
   `firstInstallTime`, so the app has been updated since it was installed.
 - The plugin's first start came after that update.
 
-A fresh install and an install that had the plugin from day one are never
-affected. Unknown facts never count as an upgrade. One known limit: an app
-installed from a link, never opened, and auto-updated before its first
-launch counts as an upgrade, so its link is skipped. Its click is at least
-as old as that update anyway. Pass `treatUpgradesAsHandled: false` to keep
-the 0.1 behaviour.
+A fresh install is never affected, and neither is an install that had
+0.2.0 or later from day one. Unknown facts never count as an upgrade.
+
+Two known limits:
+
+- **An install that started on 0.1.x** counts as adopted in an update on
+  its first 0.2.0 launch, and is marked handled. 0.1.x kept no first-seen
+  record, so the record is written after the update that brought 0.2.0.
+  That install already had its first launch under 0.1.x. Pass
+  `treatUpgradesAsHandled: false` if an app on 0.1.x still needs that
+  install's referrer.
+- An app installed from a link, never opened, and auto-updated before its
+  first launch counts as an upgrade, so its link is skipped. Its click is
+  at least as old as that update anyway.
+
+Pass `treatUpgradesAsHandled: false` to keep the 0.1 behaviour.
 
 **iOS.** There is no referrer to protect, so `treatUpgradesAsHandled` and
 `maxClickAge` are no-ops (the AdServices token carries no click time).
