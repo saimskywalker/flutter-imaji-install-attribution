@@ -30,6 +30,24 @@ an install that existed before the plugin did (#30).
   implementations get a default `installFacts()` that returns `null`.
 - Android: `markHandled()` keeps an existing marker instead of rewriting it.
 - iOS: `treatUpgradesAsHandled` and `maxClickAge` are no-ops.
+- `InstallAttribution.claimOnce()` returns an `InstallClaim`
+  (`complete()` / `release()`) (#31):
+  - One claim per process: a concurrent `claimOnce()` returns `null`
+    (`claimedElsewhere`).
+  - A persisted failed-read budget, `maxFailedReads` (default 3). After it
+    the install is marked handled and Play is not asked again.
+  - `terminal` reasons (default `{playStoreMissing}`) mark the install
+    handled at once.
+  - The count lives next to the handled marker, outside backups, and
+    `clearHandled()` clears it.
+  - `failedReads()`, `lastFailure`, and the `ReadOnceSkip` values
+    `claimedElsewhere`, `readFailed`, `terminalFailure` and `budgetSpent`.
+  - Platform interface: `failedReads()` / `recordFailedRead()`. A platform
+    without them gets the lock but no budget.
+- Android: the Play Store presence check (`PackageManager.getPackageInfo`, a
+  Binder call) moved from the platform thread to the worker thread (#31).
+  No Binder call in `read` runs on the main thread now.
+- README quick start uses `claimOnce()`.
 
 ## 0.1.2
 

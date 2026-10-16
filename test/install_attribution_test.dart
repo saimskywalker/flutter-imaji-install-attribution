@@ -16,6 +16,10 @@ class FakePlatform extends ImajiInstallAttributionPlatform {
   InstallFacts? facts;
   int marks = 0;
 
+  /// Persisted next to the marker; `null` simulates a platform that cannot
+  /// count failures.
+  int? failures = 0;
+
   @override
   Future<InstallAttributionResult> read({required Duration timeout}) {
     reads++;
@@ -45,7 +49,19 @@ class FakePlatform extends ImajiInstallAttributionPlatform {
   @override
   Future<bool> clearHandled() async {
     handled = false;
+    if (failures != null) failures = 0;
     return true;
+  }
+
+  @override
+  Future<int> failedReads() async =>
+      failures ?? (throw UnimplementedError('no counter'));
+
+  @override
+  Future<int> recordFailedRead() async {
+    final current = failures;
+    if (current == null) throw UnimplementedError('no counter');
+    return failures = current + 1;
   }
 }
 
@@ -462,6 +478,196 @@ void main() {
       await InstallAttribution.readOnce();
       expect(InstallAttribution.lastSkipReason, isNull);
     });
+  });
+
+  group('claimOnce (#31)', () {
+    const timeout = Unavailable(UnavailableReason.timeout);
+
+    test('two concurrent claims in one process: exactly one wins', () async {
+      final gate = Completer<InstallAttributionResult>();
+      fake.onRead = (_) => gate.future;
+      final first = InstallAttribution.claimOnce();
+      final second = InstallAttribution.claimOnce();
+      expect(await second, isNull);
+      expect(InstallAttribution.lastSkipReason, ReadOnceSkip.claimedElsewhere);
+      gate.complete(_attributed);
+      final claim = (await first)!;
+      expect(claim.result, same(_attributed));
+      expect(fake.reads, 1);
+      expect(
+        await InstallAttribution.claimOnce(),
+        isNull,
+        reason: 'still held until complete() or release()',
+      );
+      await claim.complete();
+    });
+
+    test('complete() marks handled; later claims get nothing', () async {
+      final claim = (await InstallAttribution.claimOnce())!;
+      expect(await claim.complete(), isTrue);
+      expect(fake.handled, isTrue);
+      expect(await InstallAttribution.claimOnce(), isNull);
+      expect(InstallAttribution.lastSkipReason, ReadOnceSkip.handled);
+      expect(await claim.complete(), isFalse, reason: 'only the first counts');
+      expect(fake.marks, 1);
+    });
+
+    test('release() keeps it unhandled and frees the lock', () async {
+      final claim = (await InstallAttribution.claimOnce())!;
+      claim.release();
+      expect(fake.handled, isFalse);
+      final again = (await InstallAttribution.claimOnce())!;
+      claim.release(); // A stale handle cannot free someone else's claim.
+      expect(await InstallAttribution.claimOnce(), isNull);
+      again.release();
+    });
+
+    test('organic results are claims too', () async {
+      const organic = Organic();
+      fake.onRead = (_) async => organic;
+      final claim = (await InstallAttribution.claimOnce())!;
+      expect(claim.result, same(organic));
+      await claim.complete();
+    });
+
+    test(
+      'the failed-read budget spans launches, then stops calling Play',
+      () async {
+        fake.onRead = (_) async => timeout;
+        // Each claimOnce below stands for one cold start.
+        for (var launch = 1; launch <= 2; launch++) {
+          expect(await InstallAttribution.claimOnce(), isNull);
+          expect(InstallAttribution.lastSkipReason, ReadOnceSkip.readFailed);
+          expect(InstallAttribution.lastFailure, same(timeout));
+          expect(fake.failures, launch);
+          expect(fake.handled, isFalse);
+        }
+        expect(await InstallAttribution.claimOnce(), isNull);
+        expect(InstallAttribution.lastSkipReason, ReadOnceSkip.budgetSpent);
+        expect(fake.handled, isTrue);
+        expect(fake.reads, 3);
+
+        for (var launch = 0; launch < 5; launch++) {
+          expect(await InstallAttribution.claimOnce(), isNull);
+        }
+        expect(
+          fake.reads,
+          3,
+          reason: 'no platform read once the budget is spent',
+        );
+        expect(await InstallAttribution.failedReads(), 3);
+      },
+    );
+
+    test('maxFailedReads is configurable, and below 1 means 1', () async {
+      fake.onRead = (_) async => timeout;
+      expect(await InstallAttribution.claimOnce(maxFailedReads: 0), isNull);
+      expect(InstallAttribution.lastSkipReason, ReadOnceSkip.budgetSpent);
+      await InstallAttribution.clearHandled();
+      expect(fake.failures, 0, reason: 'clearHandled clears the count too');
+
+      for (var i = 0; i < 4; i++) {
+        await InstallAttribution.claimOnce(maxFailedReads: 5);
+      }
+      expect(fake.handled, isFalse);
+      await InstallAttribution.claimOnce(maxFailedReads: 5);
+      expect(fake.handled, isTrue);
+    });
+
+    test(
+      'a count already over a lowered budget is spent without a read',
+      () async {
+        fake.failures = 4;
+        expect(await InstallAttribution.claimOnce(maxFailedReads: 2), isNull);
+        expect(InstallAttribution.lastSkipReason, ReadOnceSkip.budgetSpent);
+        expect(fake.reads, 0);
+        expect(fake.handled, isTrue);
+      },
+    );
+
+    test(
+      'a terminal reason marks the install handled on first sight',
+      () async {
+        fake.onRead = (_) async =>
+            const Unavailable(UnavailableReason.playStoreMissing);
+        expect(await InstallAttribution.claimOnce(), isNull);
+        expect(InstallAttribution.lastSkipReason, ReadOnceSkip.terminalFailure);
+        expect(fake.handled, isTrue);
+        expect(fake.failures, 0);
+      },
+    );
+
+    test('terminal reasons are configurable', () async {
+      fake.onRead = (_) async =>
+          const Unavailable(UnavailableReason.playStoreMissing);
+      expect(await InstallAttribution.claimOnce(terminal: const {}), isNull);
+      expect(InstallAttribution.lastSkipReason, ReadOnceSkip.readFailed);
+      expect(fake.handled, isFalse);
+
+      fake.onRead = (_) async =>
+          const Unavailable(UnavailableReason.permissionError);
+      expect(
+        await InstallAttribution.claimOnce(
+          terminal: const {UnavailableReason.permissionError},
+        ),
+        isNull,
+      );
+      expect(InstallAttribution.lastSkipReason, ReadOnceSkip.terminalFailure);
+    });
+
+    test(
+      'a success after failures returns a claim and keeps the count',
+      () async {
+        fake.onRead = (_) async => timeout;
+        await InstallAttribution.claimOnce();
+        fake.onRead = (_) async => _attributed;
+        final claim = (await InstallAttribution.claimOnce())!;
+        expect(claim.result, same(_attributed));
+        expect(fake.failures, 1);
+        claim.release();
+      },
+    );
+
+    test('a platform that cannot count gets the lock but no budget', () async {
+      fake.failures = null;
+      fake.onRead = (_) async => timeout;
+      for (var i = 0; i < 5; i++) {
+        expect(await InstallAttribution.claimOnce(), isNull);
+        expect(InstallAttribution.lastSkipReason, ReadOnceSkip.readFailed);
+      }
+      expect(fake.handled, isFalse);
+      expect(await InstallAttribution.failedReads(), isNull);
+    });
+
+    test(
+      "readOnce's options apply, and the lock is freed after a null",
+      () async {
+        expect(
+          await InstallAttribution.claimOnce(pastInstallFlow: () => true),
+          isNull,
+        );
+        expect(InstallAttribution.lastSkipReason, ReadOnceSkip.pastInstallFlow);
+        expect(fake.reads, 0);
+        await InstallAttribution.clearHandled();
+        final claim = await InstallAttribution.claimOnce();
+        expect(claim, isNotNull, reason: 'not claimedElsewhere');
+        claim!.release();
+      },
+    );
+
+    test(
+      'never throws, and frees the lock, when the store is broken',
+      () async {
+        fake.failStore = true;
+        fake.onRead = (_) async => timeout;
+        expect(await InstallAttribution.claimOnce(), isNull);
+        fake.failStore = false;
+        fake.onRead = (_) async => _attributed;
+        final claim = await InstallAttribution.claimOnce();
+        expect(claim, isNotNull);
+        claim!.release();
+      },
+    );
   });
 
   group('adoptExistingState', () {

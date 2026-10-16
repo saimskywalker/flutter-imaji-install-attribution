@@ -20,8 +20,10 @@ internal fun interface Cancellable {
  * One read of the Play Install Referrer, with the guarantees the Dart API
  * promises:
  *
- * - The blocking `getInstallReferrer()` Binder call runs on [worker], never on
- *   the platform thread, so a slow Play Store cannot freeze the UI.
+ * - Every Binder call — the Play Store presence check
+ *   (`PackageManager.getPackageInfo`) and the blocking `getInstallReferrer()`
+ *   — runs on [worker], never on the platform thread, so a slow Play Store
+ *   or package manager cannot freeze the UI.
  * - Every read ends after at most `timeoutMs`, as `timeout`.
  * - A `SERVICE_DISCONNECTED` (at setup, or a lost connection before the read
  *   started) gets exactly one reconnect.
@@ -58,12 +60,24 @@ internal class ReferrerReader(
                     ),
                 )
             }
-            val playStorePresent = try {
-                isPlayStoreInstalled()
-            } catch (_: Throwable) {
-                true // Unknown: let the bind decide.
+            try {
+                worker.execute {
+                    val playStorePresent = try {
+                        isPlayStoreInstalled()
+                    } catch (_: Throwable) {
+                        true // Unknown: let the bind decide.
+                    }
+                    main.post { onPlayStoreChecked(playStorePresent) }
+                }
+            } catch (error: Throwable) {
+                // RejectedExecutionException: the plugin was detached.
+                finish(ReferrerMapping.fromThrowable(error))
             }
-            if (!playStorePresent) {
+        }
+
+        private fun onPlayStoreChecked(present: Boolean) {
+            if (finished.get()) return
+            if (!present) {
                 finish(
                     ReferrerOutcome.Unavailable(
                         Reason.PLAY_STORE_MISSING,
