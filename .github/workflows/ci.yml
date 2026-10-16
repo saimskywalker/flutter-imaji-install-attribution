@@ -49,6 +49,47 @@ jobs:
             exit 1
           fi
 
+  referrer_builder:
+    # Plain Dart SDK, no Flutter: proves a backend can depend on the builder.
+    name: imaji_referrer_builder (Dart ${{ matrix.sdk }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ["3.8.0", stable] # the pubspec's lower bound, and the latest
+    defaults:
+      run:
+        working-directory: packages/imaji_referrer_builder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+      - run: dart pub get
+      - name: No runtime dependencies
+        run: |
+          # `dart pub deps --no-dev` lists the SDK, then the package; any
+          # further line is a runtime dependency.
+          deps=$(dart pub deps --no-dev --style=list | grep -vE '^(Dart SDK|Flutter SDK|imaji_referrer_builder) |^ *$' || true)
+          if [ -n "$deps" ]; then
+            echo "::error::imaji_referrer_builder must have no runtime dependencies"
+            echo "$deps"
+            exit 1
+          fi
+      - name: Format
+        if: matrix.sdk == 'stable'
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        run: dart analyze --fatal-infos
+      - name: Test (including the shared vectors)
+        run: dart test
+      - name: Example runs
+        run: dart run example/imaji_referrer_builder_example.dart
+      - name: Publish dry run
+        if: matrix.sdk == 'stable'
+        run: dart pub publish --dry-run
+
   android:
     name: Android (example build, Kotlin unit tests)
     runs-on: ubuntu-24.04

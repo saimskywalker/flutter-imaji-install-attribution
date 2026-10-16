@@ -1,0 +1,21 @@
+name: imaji_referrer_builder
+description: >-
+  Builds Google Play install-referrer strings and store URLs for deferred deep
+  links on a server, in pure Dart: appends a path to a configured campaign,
+  encodes it once and refuses paths the app would not route.
+version: 0.1.0
+repository: https://github.com/saimskywalker/flutter-imaji-install-attribution/tree/main/packages/imaji_referrer_builder
+issue_tracker: https://github.com/saimskywalker/flutter-imaji-install-attribution/issues
+topics:
+  - deep-linking
+  - attribution
+  - android
+  - server
+  - url
+
+environment:
+  sdk: ^3.8.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0
