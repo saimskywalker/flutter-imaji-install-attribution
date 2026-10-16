@@ -48,6 +48,22 @@ an install that existed before the plugin did (#30).
   Binder call) moved from the platform thread to the worker thread (#31).
   No Binder call in `read` runs on the main thread now.
 - README quick start uses `claimOnce()`.
+- `InstallReferrer.deepLinkResult()` / `resolveDeepLinkResult()` return a
+  sealed `DeepLinkResult`: `DeepLinkFound(uri)`, or
+  `DeepLinkRejected(reason)` with a `DeepLinkRejection` (#29). The reasons
+  are `absent`, `unsafe`, `undecodable`, `notAPath`, `hostNotAllowed`,
+  `looksDoubleEncoded` and `notAllowlisted`. A double-encoded value is
+  reported, never repaired. `deepLink()` is `deepLinkResult().uriOrNull`.
+- `InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)`: opt-in RFC
+  3986 value decoding, where `+` stays `+`. `ReferrerDecoding.form`
+  (`application/x-www-form-urlencoded`) stays the default. `withDecoding()`
+  re-reads the same raw string. Equality now includes the decoding.
+- Fix: a `.` or `..` segment is refused as written. `Uri.parse` normalised
+  `/items/../admin` to `/admin`, and `/items/../items/42` to `/items/42`
+  (accepted), before the check could see the segment.
+- `test/vectors/deep_link_vectors.json`: language-neutral vectors for the
+  decoding rule and the link builder. The README documents the rule and
+  shows how a backend in any language can test against the file.
 
 ## 0.1.2
 
