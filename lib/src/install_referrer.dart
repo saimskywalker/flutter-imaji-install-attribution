@@ -159,16 +159,46 @@ class InstallReferrer {
     );
   }
 
-  static bool _decodesCleanly(String text) {
+  static bool _decodesCleanly(String text) =>
+      _decodeComponentOrNull(text) != null;
+
+  /// `Uri.decodeComponent`, but `null` instead of a throw, and tolerant of
+  /// unescaped non-ASCII text. `Uri.decodeComponent` refuses a raw `é`
+  /// ("Illegal percent encoding"), while a value such as `/items/café` is a
+  /// valid path that `Uri.parse` encodes, so non-ASCII runs are
+  /// percent-encoded first and only the escapes are judged. A lone UTF-16
+  /// surrogate is not text at all, and is refused: `Uri` would encode it
+  /// into a link whose own `queryParameters` then throw.
+  static String? _decodeComponentOrNull(String text) {
+    if (_hasLoneSurrogate(text)) return null;
     try {
-      Uri.decodeComponent(text);
-      return true;
+      final ascii = text.replaceAllMapped(
+        _nonAscii,
+        (match) => Uri.encodeComponent(match[0]!),
+      );
+      return Uri.decodeComponent(ascii);
     } on ArgumentError {
-      return false;
+      return null;
     } on FormatException {
-      return false;
+      return null;
     }
   }
+
+  static bool _hasLoneSurrogate(String text) {
+    for (var i = 0; i < text.length; i++) {
+      final unit = text.codeUnitAt(i);
+      if (unit >= 0xD800 && unit <= 0xDBFF) {
+        final next = i + 1 < text.length ? text.codeUnitAt(i + 1) : 0;
+        if (next < 0xDC00 || next > 0xDFFF) return true;
+        i++;
+      } else if (unit >= 0xDC00 && unit <= 0xDFFF) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static final RegExp _nonAscii = RegExp(r'[^\x00-\x7F]+');
 
   static bool _matchesPrefix(String path, String prefix) {
     if (!prefix.startsWith('/')) return false;

@@ -56,6 +56,35 @@ void main() {
       });
     }
 
+    test('unescaped non-ASCII text is still a link', () {
+      // A builder that encodes the path once gives `/items/café` after
+      // Play's and the parameter decode; it must not be mistaken for a bad
+      // escape.
+      for (final (raw, link) in [
+        ('utm_content=%2Fitems%2Fcaf%C3%A9', '/items/caf%C3%A9'),
+        (
+          'utm_content=%2Fitems%2F%E2%82%AC%3Fq%3D%C3%A9',
+          '/items/%E2%82%AC?q=%C3%A9',
+        ),
+        ('utm_content=%2Fitems%2F%F0%9F%98%80', '/items/%F0%9F%98%80'),
+        ('utm_content=%2Fitems%2Fcaf%C3%A9%2F%25FF', null),
+      ]) {
+        expect(
+          InstallReferrer(raw).deepLink(allow: allow)?.toString(),
+          link,
+          reason: raw,
+        );
+      }
+      // A lone surrogate is not text: refused, not encoded into a link.
+      for (final value in ['/items/\uD800', '/items?q=\uDC00', '/\uD83D/x']) {
+        expect(
+          InstallReferrer.resolveDeepLink(value, allow: allow),
+          isNull,
+          reason: value,
+        );
+      }
+    });
+
     test('a valid multi-byte escape is still a link', () {
       final r = InstallReferrer('utm_content=%2Fitems%2F%25E2%2582%25AC');
       expect(r.deepLink(allow: allow).toString(), '/items/%E2%82%AC');
@@ -122,7 +151,83 @@ void main() {
         exercise('utm_content=${Uri.encodeQueryComponent(text)}');
       }
     });
+
+    test('values without a percent sign resolve exactly as in 0.1.1', () {
+      // #28 changed only how escapes are judged. A differential check
+      // against the 0.1.1 algorithm keeps it from refusing anything else
+      // (it once refused unescaped non-ASCII text).
+      final random = Random(2801);
+      const alphabet = [
+        '/', '//', '.', '..', '?', '#', '&', '=', '+', ' ', ':', '@', //
+        'https:', 'example.com', 'items', 'a', '0', '\u00e9', '\u20ac',
+        '\u{1F600}', '[', ']', '~', '!', r'$', "'", '(', ')', '*', ',', ';',
+      ];
+      for (var i = 0; i < 5000; i++) {
+        final buffer = StringBuffer(random.nextBool() ? '/' : '');
+        final length = random.nextInt(10);
+        for (var j = 0; j < length; j++) {
+          buffer.write(alphabet[random.nextInt(alphabet.length)]);
+        }
+        final value = buffer.toString();
+        expect(
+          InstallReferrer.resolveDeepLink(
+            value,
+            allow: allow,
+            hosts: hosts,
+          )?.toString(),
+          legacyResolve(value, allow, hosts)?.toString(),
+          reason: value,
+        );
+      }
+    });
   });
+}
+
+/// `resolveDeepLink` exactly as 0.1.1 shipped it, for the differential test.
+/// Only called with values that contain no `%`, where it cannot throw.
+Uri? legacyResolve(String value, List<String> allow, List<String> hosts) {
+  final text = value.trim();
+  if (text.isEmpty || text.contains(r'\')) return null;
+  if (text.codeUnits.any((c) => c < 0x20 || c == 0x7f)) return null;
+  final Uri uri;
+  try {
+    uri = Uri.parse(text);
+  } on FormatException {
+    return null;
+  }
+  if (uri.hasScheme || text.startsWith('//')) {
+    final allowedHosts = {for (final h in hosts) h.toLowerCase()};
+    final ok =
+        uri.scheme == 'https' &&
+        uri.hasAuthority &&
+        uri.userInfo.isEmpty &&
+        !uri.hasPort &&
+        allowedHosts.contains(uri.host.toLowerCase());
+    if (!ok) return null;
+  } else if (!text.startsWith('/')) {
+    return null;
+  }
+  final path = uri.path;
+  if (!path.startsWith('/') || path.startsWith('//')) return null;
+  for (final segment in path.split('/')) {
+    final decoded = Uri.decodeComponent(segment);
+    if (decoded == '.' || decoded == '..') return null;
+  }
+  bool matches(String prefix) {
+    if (!prefix.startsWith('/')) return false;
+    if (prefix == '/') return true;
+    final base = prefix.endsWith('/')
+        ? prefix.substring(0, prefix.length - 1)
+        : prefix;
+    return path == base || path.startsWith('$base/');
+  }
+
+  if (!allow.any(matches)) return null;
+  return Uri(
+    path: path,
+    query: uri.hasQuery ? uri.query : null,
+    fragment: uri.hasFragment ? uri.fragment : null,
+  );
 }
 
 /// Fails unless [link] is `null` or a relative link whose own decoders

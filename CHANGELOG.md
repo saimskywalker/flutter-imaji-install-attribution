@@ -6,8 +6,10 @@
   `null`; it is now refused, like a malformed escape (`%`, `%ZZ`), which
   `Uri.parse` used to rewrite silently into `%25`. The check covers the
   query and fragment too, so a returned link's own `queryParameters` can no
-  longer throw. A fuzz test over every `%XX` escape and random input pins
-  it.
+  longer throw. Unescaped non-ASCII text (`/items/café`) is still accepted;
+  a lone UTF-16 surrogate is refused. A fuzz test over every `%XX` escape
+  and random input pins it, and a differential test against the 0.1.1
+  algorithm checks nothing else changed.
 
 ## 0.1.1
 
