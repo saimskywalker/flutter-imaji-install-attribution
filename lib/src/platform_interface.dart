@@ -1,5 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'install_facts.dart';
 import 'install_source.dart';
 import 'method_channel.dart';
 import 'result.dart';
@@ -50,6 +51,11 @@ abstract class ImajiInstallAttributionPlatform extends PlatformInterface {
   /// Which package installed the app, or `null` when unknown.
   Future<InstallSource?> installSource() async => null;
 
+  /// What the device knows about this install, or `null` when the platform
+  /// has nothing to report (iOS, or an implementation that predates 0.2.0).
+  /// `null` turns `treatUpgradesAsHandled` into a no-op.
+  Future<InstallFacts?> installFacts() async => null;
+
   /// Whether [markHandled] was called on this install.
   Future<bool> isHandled() {
     throw UnimplementedError('isHandled() has not been implemented.');
@@ -58,6 +64,17 @@ abstract class ImajiInstallAttributionPlatform extends PlatformInterface {
   /// Persists the consume-once marker. Returns `true` when it was written.
   Future<bool> markHandled() {
     throw UnimplementedError('markHandled() has not been implemented.');
+  }
+
+  /// How many reads [recordFailedRead] has counted on this install. Stored
+  /// next to the consume-once marker and cleared with it.
+  Future<int> failedReads() {
+    throw UnimplementedError('failedReads() has not been implemented.');
+  }
+
+  /// Adds one failed read to the persisted count and returns the new count.
+  Future<int> recordFailedRead() {
+    throw UnimplementedError('recordFailedRead() has not been implemented.');
   }
 
   /// Removes the consume-once marker. Returns `true` when it was removed.

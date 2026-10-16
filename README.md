@@ -31,11 +31,11 @@ existing Flutter referrer plugins share a few problems:
 | Problem | What this plugin does |
 |---|---|
 | They apply the Kotlin Gradle Plugin, which Flutter warns will fail to build in future releases (AGP 9 Built-in Kotlin) | Built-in Kotlin from day one. Flutter's check is a text match on the plugin's build file, and there is nothing to match |
-| The Binder call `getInstallReferrer()` runs on the platform thread, so a slow Play Store freezes the UI (ANR) | It runs on a background thread, with a timeout (default 10 s) |
+| The Binder call `getInstallReferrer()` runs on the platform thread, so a slow Play Store freezes the UI (ANR) | Every Binder call in the read (the Play Store presence check and `getInstallReferrer()`) runs on a background thread, with a timeout (default 10 s) |
 | Play can answer `OK` with details whose bundle is null; reading them is a fatal `NullPointerException` | Every read is guarded: `Unavailable(nullDetails)` |
 | `DeadObjectException`, `PERMISSION_ERROR`, `FEATURE_NOT_SUPPORTED`, … arrive as `PlatformException` strings, or crash the app | Each one is a distinct `UnavailableReason` |
 | A second `SERVICE_DISCONNECTED` can leave the call unanswered forever | One reconnect, then `Unavailable(serviceDisconnected)`; a timeout bounds everything |
-| Nothing stops a referrer from being acted on twice | Opt-in consume-once store: `readOnce()` + `markHandled()` |
+| Nothing stops a referrer from being acted on twice, and a failing read retries on every launch forever | `claimOnce()`: one claim per process, a persisted retry budget, first-launch-only semantics |
 | Deep-link extraction is left to you, and decoding twice corrupts `%2F` paths | `referrer.deepLink(allow: [...])` decodes exactly once and enforces an allowlist |
 | "Unknown installer" errors for Samsung restores and other stores | `InstallSource` maps the installer package: Play, Galaxy Store, AppGallery, Amazon, side-load, restore |
 | No way to test without publishing | `debugOverride()` and a real [testing guide](TESTING.md) |
@@ -46,23 +46,25 @@ existing Flutter referrer plugins share a few problems:
 import 'package:imaji_install_attribution/imaji_install_attribution.dart';
 
 Future<void> routeFromInstall(GoRouter router) async {
-  final result = await InstallAttribution.readOnce(); // null once handled
-  switch (result) {
-    case null:
-      return; // handled on an earlier launch
+  // null once handled, while another startup path holds the claim, or after
+  // a failed read (retried on the next launch, up to a budget).
+  final claim = await InstallAttribution.claimOnce();
+  if (claim == null) return;
+  switch (claim.result) {
     case Attributed(:final referrer?):
       final link = referrer.deepLink(allow: ['/items/', '/profile/']);
       if (link != null) router.go(link.toString());
     case Attributed(:final token?):
       await sendToServer(token); // iOS: resolve with Apple's attribution API
-    case Attributed() || Organic():
+    case _:
       break; // installed with no campaign
-    case Unavailable(:final reason):
-      log('No attribution: ${reason.name}'); // typed, never thrown
   }
-  await InstallAttribution.markHandled();
+  await claim.complete(); // never again on this install
 }
 ```
+
+Failures are typed, never thrown: `InstallAttribution.lastSkipReason` and
+`lastFailure` say why `claimOnce()` returned `null`.
 
 That is the whole integration: no manifest edits, no `Info.plist` keys, no
 App Tracking Transparency prompt.
@@ -77,7 +79,7 @@ or add it to `pubspec.yaml` yourself:
 
 ```yaml
 dependencies:
-  imaji_install_attribution: ^0.1.0
+  imaji_install_attribution: ^0.2.0
 ```
 
 Requirements: Flutter 3.44+ / Dart 3.12+. Android minSdk 21. iOS 15
@@ -154,8 +156,97 @@ Concurrent calls share one platform read. The default timeout is 10 seconds.
   backslashes, control characters and percent escapes that are malformed or
   not UTF-8 (`%ZZ`, `%FF`) are always refused. It never throws: the referrer
   is input anyone can craft, so anything that is not a safe path is `null`.
+- `deepLinkResult(...)`: the same check, but it says **why** there is no
+  link. Use it to log why an attributed install landed on the home screen:
 
-### Consume once
+  ```dart
+  switch (referrer.deepLinkResult(allow: ['/invite/'])) {
+    case DeepLinkFound(:final uri):
+      router.go(uri.toString());
+    case DeepLinkRejected(:final reason):
+      log('No deep link: ${reason.name}'); // never throws either
+  }
+  ```
+
+  The `DeepLinkRejection` values are `absent`, `unsafe`, `undecodable`,
+  `notAPath`, `hostNotAllowed`, `looksDoubleEncoded` and `notAllowlisted`.
+  `looksDoubleEncoded` is the common link-builder bug: after one decode the
+  value is `%2Finvite%2Fabc123`, and one more decode would give an
+  allowlisted link. It is reported, **never repaired**. Repairing it would
+  hide the builder bug and corrupt paths that really contain `%2F`.
+- `InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)`: see
+  [the decoding rule](#the-decoding-rule). `referrer.withDecoding(...)`
+  re-reads the same `raw` string.
+
+### The decoding rule
+
+A deferred link crosses two codebases. A **link builder** (a server, an edge
+redirect, a CLI) puts the in-app path into the store URL. The **app**
+decodes it. Each side's tests usually pin only its own literal, so both can
+stay green while disagreeing. Here is the rule this plugin applies:
+
+1. The builder encodes the path **once** as the value of `utm_content`, and
+   the whole referrer **once more** as the store URL's `referrer=`
+   parameter: `/invite/abc123` → `utm_content=%2Finvite%2Fabc123` →
+   `&referrer=utm_content%3D%252Finvite%252Fabc123`. `PlayStoreUrl` does
+   exactly this.
+2. Play removes the outer layer and hands the app
+   `utm_content=%2Finvite%2Fabc123`.
+3. `InstallReferrer` splits on `&`, then splits each piece at its first `=`.
+   It decodes each key and value **once** and keeps the first occurrence of
+   a key. The default decoding is `ReferrerDecoding.form`
+   ([`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded)):
+   `+` is a space and `%XX` is UTF-8.
+   `ReferrerDecoding.rfc3986`
+   ([RFC 3986 §2.1](https://www.rfc-editor.org/rfc/rfc3986#section-2.1)) is
+   the same, except that `+` stays `+`.
+4. `deepLink` checks the value in a fixed order and returns the first
+   failure as the `DeepLinkRejection`.
+
+The two decodings agree on everything a real encoder produces: form
+encoders write a space as `+` and a `+` as `%2B`, and RFC 3986 encoders
+(`encodeURIComponent`) write `%20` and `%2B`. They disagree only on a
+**literal** `+`, which appears when the builder did not encode the value at
+all:
+
+| Referrer as Play returns it | `form` (default) | `rfc3986` |
+|---|---|---|
+| `utm_content=%2Fitems%2Fa%2Bb` | `/items/a+b` | `/items/a+b` |
+| `utm_content=%2Fitems%2Fa+b` | `/items/a b` | `/items/a+b` |
+| `utm_content=/items/a+b` (not encoded) | `/items/a b` | `/items/a+b` |
+
+#### Test your link builder against the vectors
+
+[`test/vectors/deep_link_vectors.json`](test/vectors/deep_link_vectors.json)
+is a language-neutral table of the rule above. For each row, it gives:
+
+- the referrer as Play returns it, and the `decoding`;
+- the `value` after one decode;
+- the `expected_deep_link`, or the `rejection` reason;
+- for rows built from a `path`, the exact `play_url_referrer_param` and
+  `play_store_url` a builder must emit.
+
+The rows include `+`, `%`, `&`, `=`, `#`, a query, non-ASCII, an encoded
+slash inside a segment, double encoding, and every rejection reason. The
+plugin's own tests check `InstallReferrer` and `PlayStoreUrl` against every
+row. A backend in any language can load the same file. Pin it to a release
+tag, for example
+`https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/v0.2.0/test/vectors/deep_link_vectors.json`
+(available from 0.2.0). For example, in Python:
+
+```python
+import json, urllib.parse, urllib.request
+
+URL = "https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/v0.2.0/test/vectors/deep_link_vectors.json"
+doc = json.load(urllib.request.urlopen(URL))
+for row in doc["vectors"]:
+    if "path" in row:  # a row a builder must reproduce
+        referrer = my_build_referrer({doc["key"]: row["path"]})
+        assert referrer == row["referrer_as_play_returns_it"], row["name"]
+        assert my_store_url(doc["package_name"], referrer) == row["play_store_url"]
+```
+
+### Consume once, on the first launch only
 
 `readOnce()` returns `null` after `markHandled()`. Nothing is marked
 automatically, so a crash between reading and routing does not lose the
@@ -163,6 +254,125 @@ link. The marker is a tiny file excluded from backups (`noBackupFilesDir` on
 Android, an excluded file in Application Support on iOS): an uninstall and
 reinstall starts unhandled again, which matches Play — a reinstall gets a
 fresh referrer. `isHandled()` and `clearHandled()` exist for debug menus.
+
+Google's guidance is to act on the referrer only on the first execution
+after install. Play keeps returning the same referrer for 90 days, so
+"unhandled" alone is not enough. `readOnce()` has three options for that.
+Each one that applies marks the install handled and returns `null`, and
+`InstallAttribution.lastSkipReason` (a `ReadOnceSkip`) says why. `claimOnce()`
+takes the same options. A
+suppressed referrer is silent: nothing is returned, so nothing can route or
+show a banner about it.
+
+| Option | Default | What it does |
+|---|---|---|
+| `treatUpgradesAsHandled` | `true` | An install that existed before the plugin is handled. That is an app updated since it was installed, where the plugin first ran after that update. Android only; it needs no Play Store call. |
+| `maxClickAge` | `null` (no limit) | A Play click older than this is handled. Uses Play's server clock (`clickedAtServer`) when reported, else `clickedAt`; an unknown click time is never stale. Pick the window your links are meant for, such as an invite's validity. |
+| `pastInstallFlow` | `null` | Your own "this user is past the install flow" check, asked before Play. See [the recipe](#route-only-while-the-user-is-still-in-the-install-flow). |
+
+```dart
+final result = await InstallAttribution.readOnce(
+  maxClickAge: const Duration(days: 7), // your link's lifetime
+  pastInstallFlow: () => session.isSignedIn && firstRunDoneOnThisDevice,
+);
+```
+
+**How upgrades are detected (Android).** The plugin records the first time
+it starts on an install, in `noBackupFilesDir`. `readOnce()` treats the
+install as an upgrade when two conditions both hold:
+
+- `PackageInfo.lastUpdateTime` is more than a minute after
+  `firstInstallTime`, so the app has been updated since it was installed.
+- The plugin's first start came after that update.
+
+A fresh install is never affected, and neither is an install that had
+0.2.0 or later from day one. Unknown facts never count as an upgrade.
+
+Two known limits:
+
+- **An install that started on 0.1.x** counts as adopted in an update on
+  its first 0.2.0 launch, and is marked handled. 0.1.x kept no first-seen
+  record, so the record is written after the update that brought 0.2.0.
+  That install already had its first launch under 0.1.x. Pass
+  `treatUpgradesAsHandled: false` if an app on 0.1.x still needs that
+  install's referrer.
+- An app installed from a link, never opened, and auto-updated before its
+  first launch counts as an upgrade, so its link is skipped. Its click is
+  at least as old as that update anyway.
+
+Pass `treatUpgradesAsHandled: false` to keep the 0.1 behaviour.
+
+**iOS.** There is no referrer to protect, so `treatUpgradesAsHandled` and
+`maxClickAge` are no-ops (the AdServices token carries no click time).
+`pastInstallFlow` is app state and applies on both platforms.
+
+### Route only while the user is still in the install flow
+
+A deferred link belongs to the install, sign-up and first-run flow. A
+reliable "past the install flow" check needs **both** halves:
+
+1. **Signed in.** Signed in alone is wrong: a reinstall that restores a
+   session (an account manager, a credential restore, a server that
+   remembers the device) is still a first run, and its link should route.
+2. **The first run already completed on this device.** Keep this flag out
+   of backups. Android Auto Backup and device-to-device transfer restore
+   `SharedPreferences` by default. A reinstall would then inherit "first
+   run done" and spend the link silently. Keep the flag in a file under
+   `noBackupFilesDir`, or exclude its preferences file from backup:
+
+```xml
+<!-- res/xml/data_extraction_rules.xml (Android 12+), referenced from
+     android:dataExtractionRules; mirror it in android:fullBackupContent
+     for Android 11 and lower. -->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="sharedpref" path="first_run.xml"/>
+  </cloud-backup>
+  <device-transfer>
+    <exclude domain="sharedpref" path="first_run.xml"/>
+  </device-transfer>
+</data-extraction-rules>
+```
+
+```dart
+final result = await InstallAttribution.readOnce(
+  pastInstallFlow: () async =>
+      await auth.isSignedIn() && await firstRun.completedOnThisDevice(),
+);
+```
+
+If the check throws, `readOnce()` returns `null` without marking anything,
+and the next launch asks again.
+
+### `claimOnce`: one claim, a retry budget
+
+`claimOnce()` is `readOnce()` with three guarantees for apps that have more
+than one startup path:
+
+- **One claim per process.** While a claim is held, every other
+  `claimOnce()` in the process returns `null` (`claimedElsewhere`). A link
+  cannot be dispatched twice by a first-frame callback and a later "router
+  ready" path. The lock is taken before the first `await`.
+  `claim.complete()` marks the install handled. `claim.release()` leaves it
+  unhandled, for when the link did not land (no router, or a newer tapped
+  link took precedence). The next launch, or a later `claimOnce()`, then
+  tries again.
+- **A retry budget across launches.** A failed read returns `null`
+  (`readFailed`, details in `lastFailure`). The failure is counted in a file
+  next to the handled marker, which survives process death, is excluded
+  from backups and is cleared by `clearHandled()`. After `maxFailedReads`
+  failures the install is marked handled (`budgetSpent`), and no later
+  launch binds to the Play Store again.
+- **Terminal reasons** in `terminal` mark the install handled on first sight
+  (`terminalFailure`).
+
+| Parameter | Default | Why |
+|---|---|---|
+| `maxFailedReads` | `3` | A failed Android read costs a service bind and up to the timeout (10 s) of background work, on every launch, forever. Three launches separate a transient failure (Play updating itself, a busy device) from a device that cannot answer. Raise it if first launches are often offline. |
+| `terminal` | `{playStoreMissing}` | Without the Play Store there is no Play install, and so no referrer, even if Play is installed later. Add `permissionError` if you would rather not retry a manifest problem; pass `const {}` to count everything against the budget. |
+
+`readOnce()` keeps its 0.1 shape (no lock, no budget) for apps that manage
+those themselves.
 
 ### `InstallSource`
 
@@ -202,6 +412,24 @@ it.
 
 ## Migrating from other plugins
 
+**If your app already shipped referrer handling, call `adoptExistingState`
+first.** Without it, an existing user can be routed to a stale link on the
+first launch after the update. For example, a user installed from
+`/invite/abc123` 40 days ago, and your previous code already routed that
+link. Play still returns the same referrer, and the plugin cannot see your
+old "done" flag. `treatUpgradesAsHandled` catches this case from the device
+alone, and your own flag makes it certain:
+
+```dart
+await InstallAttribution.adoptExistingState(
+  alreadyHandled: prefs.getBool('referrer_done') ?? false, // your old flag
+);
+final result = await InstallAttribution.readOnce();
+```
+
+`true` marks the install handled; `false` changes nothing. It is idempotent,
+so calling it on every launch is fine.
+
 ### From `play_install_referrer`
 
 ```dart
@@ -224,6 +452,11 @@ if (await InstallAttribution.read()
 when Play reports 0); `installBeginTimestampSeconds` → `installBeganAt`;
 `installVersion` → `installVersion`; the `*ServerSeconds` values →
 `clickedAtServer` / `installBeganAtServer`.
+
+If you split the referrer yourself, note which decoder you used. With
+`Uri.splitQueryString` or `Uri.decodeQueryComponent` (form decoding,
+`+` → space), the default matches. With `Uri.decodeComponent`, pass
+`decoding: ReferrerDecoding.rfc3986`.
 
 ### From `android_play_install_referrer`
 
@@ -259,7 +492,11 @@ final link = switch (await InstallAttribution.read()) {
 ```
 
 Drop any extra `Uri.decodeComponent` on referrer values: `parameters` are
-already decoded once, and decoding again corrupts paths containing `%2F`. On
+already decoded once, and decoding again corrupts paths containing `%2F`.
+If your old code decoded the values themselves with `Uri.decodeComponent`
+(RFC 3986, where `+` stays `+`), construct the referrer with
+`InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)` to keep the same
+answers; see [the decoding rule](#the-decoding-rule). On
 iOS this plugin reads the AdServices token rather than the clipboard; keep a
 clipboard or "paste link" flow of your own if you rely on one.
 
@@ -274,7 +511,7 @@ clipboard or "paste link" flow of your own if you rely on one.
 | Timeout | Yes | No | No | No |
 | Null details bundle | Typed result | Crash | Crash | Crash |
 | Failures | Typed `UnavailableReason` | `PlatformException` | `PlatformException` | `PlatformException` |
-| Deep-link helper | Allowlist, single decode | No | No | Pattern list |
+| Deep-link helper | Allowlist, single decode, typed rejection reasons, cross-language vectors | No | No | Pattern list |
 | Consume-once store | Yes | No | No | No |
 | Installer / store detection | Yes | No | No | No |
 | Debug override + testing guide | Yes | No | No | No |

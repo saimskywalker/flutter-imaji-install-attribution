@@ -103,6 +103,52 @@ class ReferrerReaderTest {
     }
 
     @Test
+    fun thePlayStoreCheckRunsOffThePlatformThread() {
+        // Two Binder calls are made per read: the PackageManager presence
+        // check and getInstallReferrer(). Neither may run on the thread that
+        // started the read (the platform thread in the real plugin).
+        val caller = Thread.currentThread()
+        var checkThread: Thread? = null
+        val client = FakeClient({ it.onSetupFinished(InstallReferrerResponse.OK) }, { details })
+        val outcomes = mutableListOf<ReferrerOutcome>()
+        val reader = ReferrerReader(
+            newClient = { client },
+            isPlayStoreInstalled = {
+                checkThread = Thread.currentThread()
+                true
+            },
+            worker = ThreadExecutor(),
+            main = FakeMain(),
+        )
+        reader.read(10_000) { outcomes += it }
+        assertEquals(listOf<ReferrerOutcome>(ReferrerOutcome.Details(details)), outcomes)
+        assertTrue(checkThread != null && checkThread !== caller)
+        assertTrue(client.readThread !== caller)
+    }
+
+    @Test
+    fun aTimeoutDuringThePlayStoreCheckNeverBinds() {
+        val main = FakeMain()
+        val queued = mutableListOf<Runnable>()
+        val outcomes = mutableListOf<ReferrerOutcome>()
+        var bound = false
+        val reader = ReferrerReader(
+            newClient = {
+                bound = true
+                FakeClient({}, { details })
+            },
+            isPlayStoreInstalled = { true },
+            worker = Executor { queued += it },
+            main = main,
+        )
+        reader.read(500) { outcomes += it }
+        main.advance(500)
+        queued.forEach { it.run() } // The check answers after the deadline.
+        assertEquals(Reason.TIMEOUT, reason(outcomes.single()))
+        assertTrue(!bound)
+    }
+
+    @Test
     fun missingPlayStoreNeverBinds() {
         val outcomes = run(emptyList(), playStore = false)
         assertEquals(Reason.PLAY_STORE_MISSING, reason(outcomes.single()))

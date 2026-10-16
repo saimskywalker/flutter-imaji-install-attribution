@@ -177,6 +177,58 @@ void main() {
       expect(calls, isEmpty);
     });
 
+    test('on Android installFacts decodes the native reply', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      answer(
+        (call) => switch (call.method) {
+          'installFacts' => {
+            'firstInstallMs': 1700000000000,
+            'lastUpdateMs': 1700000600000,
+            'pluginFirstSeenMs': 1700000700000,
+            'versionName': '2.0.0',
+          },
+          _ => null,
+        },
+      );
+      final facts = (await platform.installFacts())!;
+      expect(
+        facts.firstInstalledAt,
+        DateTime.fromMillisecondsSinceEpoch(1700000000000, isUtc: true),
+      );
+      expect(facts.lastUpdatedAt!.isAfter(facts.firstInstalledAt!), isTrue);
+      expect(facts.pluginFirstSeenAt!.isAfter(facts.lastUpdatedAt!), isTrue);
+      expect(facts.appVersion, '2.0.0');
+      expect(facts.predatesPlugin, isTrue);
+    });
+
+    test('installFacts: unknown values become null, never a throw', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      answer(
+        (_) => {
+          'firstInstallMs': null,
+          'lastUpdateMs': 0,
+          'pluginFirstSeenMs': 'x',
+          'versionName': 7,
+        },
+      );
+      final facts = (await platform.installFacts())!;
+      expect(facts.firstInstalledAt, isNull);
+      expect(facts.lastUpdatedAt, isNull);
+      expect(facts.pluginFirstSeenAt, isNull);
+      expect(facts.appVersion, isNull);
+      answer((_) => 'not a map');
+      expect(await platform.installFacts(), isNull);
+      answer((_) => throw PlatformException(code: 'io'));
+      expect(await platform.installFacts(), isNull);
+    });
+
+    test('iOS reports no install facts', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      answer((_) => throw StateError('must not be called'));
+      expect(await platform.installFacts(), isNull);
+      expect(calls, isEmpty);
+    });
+
     test('no plugin registered is notSupported', () async {
       final result = await platform.read(timeout: const Duration(seconds: 1));
       expect((result as Unavailable).reason, UnavailableReason.notSupported);
@@ -187,6 +239,23 @@ void main() {
       final result = await platform.read(timeout: const Duration(seconds: 1));
       expect((result as Unavailable).reason, UnavailableReason.internalError);
       expect(result.message, 'X: nope');
+    });
+
+    test('the failed-read count is an int, and anything else throws', () async {
+      answer(
+        (call) => switch (call.method) {
+          'failedReads' => 2,
+          'recordFailedRead' => 3,
+          _ => null,
+        },
+      );
+      expect(await platform.failedReads(), 2);
+      expect(await platform.recordFailedRead(), 3);
+      answer((_) => null); // iOS could not store it.
+      expect(platform.recordFailedRead(), throwsStateError);
+      // The public API turns that into "unknown", not a throw.
+      ImajiInstallAttributionPlatform.instance = platform;
+      expect(await InstallAttribution.failedReads(), isNull);
     });
 
     test('marker methods map replies and failures to bools', () async {

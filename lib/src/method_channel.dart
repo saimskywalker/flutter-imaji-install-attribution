@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'install_facts.dart';
 import 'install_referrer.dart';
 import 'install_source.dart';
 import 'platform_interface.dart';
@@ -49,6 +50,18 @@ class MethodChannelInstallAttribution extends ImajiInstallAttributionPlatform {
   }
 
   @override
+  Future<InstallFacts?> installFacts() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      return decodeInstallFacts(
+        await channel.invokeMethod<Object?>('installFacts'),
+      );
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
   Future<bool> isHandled() => _bool('isHandled');
 
   @override
@@ -56,6 +69,19 @@ class MethodChannelInstallAttribution extends ImajiInstallAttributionPlatform {
 
   @override
   Future<bool> clearHandled() => _bool('clearHandled');
+
+  @override
+  Future<int> failedReads() => _int('failedReads');
+
+  @override
+  Future<int> recordFailedRead() => _int('recordFailedRead');
+
+  /// An unusable reply throws, so the caller can tell "unknown" from 0.
+  Future<int> _int(String method) async {
+    final reply = await channel.invokeMethod<Object?>(method);
+    if (reply is int) return reply;
+    throw StateError('Unexpected $method reply: ${reply.runtimeType}');
+  }
 
   Future<bool> _bool(String method) async {
     try {
@@ -158,6 +184,26 @@ class MethodChannelInstallAttribution extends ImajiInstallAttributionPlatform {
       installerPackage: reply['installerPackage'] as String?,
       initiatingPackage: reply['initiatingPackage'] as String?,
     );
+  }
+
+  /// Decodes the native `installFacts` reply.
+  @visibleForTesting
+  static InstallFacts? decodeInstallFacts(Object? reply) {
+    if (reply is! Map) return null;
+    return InstallFacts(
+      firstInstalledAt: _millis(reply['firstInstallMs']),
+      lastUpdatedAt: _millis(reply['lastUpdateMs']),
+      pluginFirstSeenAt: _millis(reply['pluginFirstSeenMs']),
+      appVersion: switch (reply['versionName']) {
+        final String name => name,
+        _ => null,
+      },
+    );
+  }
+
+  static DateTime? _millis(Object? value) {
+    if (value is! num || value <= 0) return null;
+    return DateTime.fromMillisecondsSinceEpoch(value.toInt(), isUtc: true);
   }
 
   /// Play reports 0 for "unknown"; that becomes `null`, not 1970.

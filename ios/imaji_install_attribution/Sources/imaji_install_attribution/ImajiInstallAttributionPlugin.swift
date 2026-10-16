@@ -29,12 +29,23 @@ public final class ImajiInstallAttributionPlugin: NSObject, FlutterPlugin {
     case "installSource":
       // iOS has no installer package to report.
       result(nil)
+    case "installFacts":
+      // No referrer to protect on iOS: `treatUpgradesAsHandled` is a no-op.
+      result(nil)
     case "isHandled":
       onWorker(result) { HandledMarker.isHandled() }
     case "markHandled":
       onWorker(result) { HandledMarker.markHandled() }
     case "clearHandled":
-      onWorker(result) { HandledMarker.clear() }
+      onWorker(result) {
+        let marker = HandledMarker.clear()
+        let failures = FailedReads.clear()
+        return marker && failures
+      }
+    case "failedReads":
+      onWorkerInt(result) { FailedReads.count() }
+    case "recordFailedRead":
+      onWorkerInt(result) { FailedReads.increment() }
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -79,6 +90,13 @@ public final class ImajiInstallAttributionPlugin: NSObject, FlutterPlugin {
 
   private static func unavailable(_ reason: String, _ message: String) -> [String: Any] {
     ["status": "unavailable", "reason": reason, "message": message]
+  }
+
+  private func onWorkerInt(_ result: @escaping FlutterResult, _ work: @escaping () -> Int?) {
+    worker.async {
+      let value = work()
+      DispatchQueue.main.async { result(value.map { NSNumber(value: $0) }) }
+    }
   }
 
   private func onWorker(_ result: @escaping FlutterResult, _ work: @escaping () -> Bool) {
@@ -133,6 +151,58 @@ private enum HandledMarker {
       return true
     } catch {
       return FileManager.default.fileExists(atPath: url.path)
+    }
+  }
+
+  static func clear() -> Bool {
+    guard let url = url else { return false }
+    do {
+      if FileManager.default.fileExists(atPath: url.path) {
+        try FileManager.default.removeItem(at: url)
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
+/// How many attribution reads have failed on this install: the retry budget
+/// behind Dart's `claimOnce`. A tiny file next to the handled marker, also
+/// excluded from backups, and removed by `clearHandled`.
+private enum FailedReads {
+  private static var url: URL? {
+    guard
+      let directory = FileManager.default.urls(
+        for: .applicationSupportDirectory, in: .userDomainMask
+      ).first
+    else { return nil }
+    return directory.appendingPathComponent("imaji_install_attribution.failed_reads")
+  }
+
+  static func count() -> Int {
+    guard let url = url,
+      let data = try? Data(contentsOf: url),
+      let text = String(data: data, encoding: .utf8),
+      let value = Int(text.trimmingCharacters(in: .whitespacesAndNewlines))
+    else { return 0 }
+    return max(0, value)
+  }
+
+  /// The new count, or nil when it could not be stored.
+  static func increment() -> Int? {
+    guard var url = url else { return nil }
+    let next = count() + 1
+    do {
+      try FileManager.default.createDirectory(
+        at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+      try Data(String(next).utf8).write(to: url, options: .atomic)
+      var values = URLResourceValues()
+      values.isExcludedFromBackup = true
+      try url.setResourceValues(values)
+      return next
+    } catch {
+      return count() == next ? next : nil
     }
   }
 
