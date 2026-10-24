@@ -464,25 +464,17 @@ flow of your own if you rely on one.
 
 ## Alternatives
 
-Other Flutter plugins read the Play Install Referrer too, and one of them
-may be all you need:
-
-- [`play_install_referrer`](https://pub.dev/packages/play_install_referrer):
-  Play's referrer details as one object. Since 0.6.0 it uses Built-in Kotlin,
-  reads the referrer off the main thread with a 10-second timeout, and guards
-  a null details bundle.
-- [`android_play_install_referrer`](https://pub.dev/packages/android_play_install_referrer):
-  the project `play_install_referrer` continues; pub.dev lists it as
-  replaced by that package.
-- [`stack_deferred_link`](https://pub.dev/packages/stack_deferred_link):
-  Play's referrer plus an iOS clipboard flow and a link pattern matcher.
+Other Flutter plugins read the Play Install Referrer too, and one of them may
+be all you need: [`play_install_referrer`](https://pub.dev/packages/play_install_referrer),
+[`android_play_install_referrer`](https://pub.dev/packages/android_play_install_referrer)
+and [`stack_deferred_link`](https://pub.dev/packages/stack_deferred_link).
+Each package's own page says what it covers.
 
 This plugin covers a wider job, install attribution on both platforms: the
 iOS AdServices token, typed failure reasons, consume-once claiming, installer
 detection and the allowlisted deep-link helper. If reading the Android
 referrer is all you need, any of the plugins above may suit you better.
-Thanks to the maintainers of these plugins for their work. Projects move quickly; if
-anything here is out of date, please open an issue.
+Thanks to their maintainers for their work.
 
 ## FAQ
 
