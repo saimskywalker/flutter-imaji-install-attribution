@@ -578,6 +578,12 @@ plugin are not affected.
 If this plugin saved you a day of chasing referrers, a ⭐ on the repository
 helps other Flutter developers find it.
 
+## Trademarks
+
+Google Play and Android are trademarks of Google LLC. Apple, App Store and iOS
+are trademarks of Apple Inc. This project is independent and is not affiliated
+with, sponsored by or endorsed by Google or Apple.
+
 ## License
 
 MIT © saimskywalker. See [LICENSE](LICENSE).
