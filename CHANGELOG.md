@@ -1,3 +1,11 @@
+## 0.2.1
+
+- README: the comparison table is replaced by an Alternatives section that
+  describes each plugin without per-feature verdicts, and the "Why this
+  exists" table now describes the platform's traps rather than other
+  plugins. `play_install_referrer` 0.6.0 moves to Built-in Kotlin and guards
+  a null details bundle, which the old table did not reflect.
+
 ## 0.2.0
 
 **Behaviour change:** `readOnce()` no longer re-delivers an old referrer to
