@@ -25,20 +25,21 @@ was trying to open before they installed (a *deferred deep link*).
 
 Firebase Dynamic Links has been shut down, and with it the easy way to carry
 a link through an app-store install. What is left is the platform itself:
-the Play Install Referrer on Android and the AdServices token on iOS. The
-existing Flutter referrer plugins share a few problems:
+the Play Install Referrer on Android and the AdServices token on iOS.
+Reading the referrer safely has a few traps, and this plugin handles each
+of them:
 
-| Problem | What this plugin does |
+| Trap | What this plugin does |
 |---|---|
-| They apply the Kotlin Gradle Plugin, which Flutter warns will fail to build in future releases (AGP 9 Built-in Kotlin) | Built-in Kotlin from day one. Flutter's check is a text match on the plugin's build file, and there is nothing to match |
-| The Binder call `getInstallReferrer()` runs on the platform thread, so a slow Play Store freezes the UI (ANR) | Every Binder call in the read (the Play Store presence check and `getInstallReferrer()`) runs on a background thread, with a timeout (default 10 s) |
-| Play can answer `OK` with details whose bundle is null; reading them is a fatal `NullPointerException` | Every read is guarded: `Unavailable(nullDetails)` |
-| `DeadObjectException`, `PERMISSION_ERROR`, `FEATURE_NOT_SUPPORTED`, … arrive as `PlatformException` strings, or crash the app | Each one is a distinct `UnavailableReason` |
-| A second `SERVICE_DISCONNECTED` can leave the call unanswered forever | One reconnect, then `Unavailable(serviceDisconnected)`; a timeout bounds everything |
-| Nothing stops a referrer from being acted on twice, and a failing read retries on every launch forever | `claimOnce()`: one claim per process, a persisted retry budget, first-launch-only semantics |
-| Deep-link extraction is left to you, and decoding twice corrupts `%2F` paths | `referrer.deepLink(allow: [...])` decodes exactly once and enforces an allowlist |
+| Flutter warns that plugins applying the Kotlin Gradle Plugin will fail to build in a future release (AGP 9 Built-in Kotlin) | Built-in Kotlin from day one. Flutter's check is a text match on the plugin's build file, and there is nothing to match |
+| The Binder call `getInstallReferrer()` blocks the thread it runs on, so on the platform thread a slow Play Store freezes the UI (ANR) | Every Binder call in the read (the Play Store presence check and `getInstallReferrer()`) runs on a background thread, with a timeout (default 10 s) |
+| Play can answer `OK` with details whose bundle is null; reading them throws `NullPointerException` | Every read is guarded: `Unavailable(nullDetails)` |
+| `DeadObjectException`, `PERMISSION_ERROR`, `FEATURE_NOT_SUPPORTED`, … are easy to lose in a generic error string | Each one is a distinct `UnavailableReason` |
+| A second `SERVICE_DISCONNECTED` can leave a pending call unanswered | One reconnect, then `Unavailable(serviceDisconnected)`; a timeout bounds everything |
+| A referrer can be acted on twice, and a failing read can retry on every launch forever | `claimOnce()`: one claim per process, a persisted retry budget, first-launch-only semantics |
+| Decoding a referrer value twice corrupts `%2F` paths | `referrer.deepLink(allow: [...])` decodes exactly once and enforces an allowlist |
 | "Unknown installer" errors for Samsung restores and other stores | `InstallSource` maps the installer package: Play, Galaxy Store, AppGallery, Amazon, side-load, restore |
-| No way to test without publishing | `debugOverride()` and a real [testing guide](TESTING.md) |
+| Testing normally needs a build installed from Play | `debugOverride()` and a real [testing guide](TESTING.md) |
 
 ## 30-second quick start
 
@@ -79,7 +80,7 @@ or add it to `pubspec.yaml` yourself:
 
 ```yaml
 dependencies:
-  imaji_install_attribution: ^0.2.0
+  imaji_install_attribution: ^0.2.1
 ```
 
 Requirements: Flutter 3.44+ / Dart 3.12+. Android minSdk 21. iOS 15
@@ -438,7 +439,7 @@ try {
   final details = await PlayInstallReferrer.installReferrer;
   handle(details.installReferrer, details.referrerClickTimestampSeconds);
 } catch (e) {
-  // PlatformException, or a native crash before this line runs
+  // PlatformException
 }
 
 // After
@@ -500,29 +501,26 @@ answers; see [the decoding rule](#the-decoding-rule). On
 iOS this plugin reads the AdServices token rather than the clipboard; keep a
 clipboard or "paste link" flow of your own if you rely on one.
 
-## Comparison
+## Alternatives
 
-| | imaji_install_attribution | play_install_referrer | android_play_install_referrer | stack_deferred_link |
-|---|---|---|---|---|
-| Play Install Referrer | Yes | Yes | Yes | Yes |
-| iOS | AdServices token | No | No | Clipboard |
-| No Kotlin Gradle Plugin (AGP 9 built-in Kotlin) | Yes | Applies KGP | Applies KGP | Applies KGP |
-| Binder call off the platform thread | Yes | No | No | No |
-| Timeout | Yes | No | No | No |
-| Null details bundle | Typed result | Crash | Crash | Crash |
-| Failures | Typed `UnavailableReason` | `PlatformException` | `PlatformException` | `PlatformException` |
-| Deep-link helper | Allowlist, single decode, typed rejection reasons, cross-language vectors | No | No | Pattern list |
-| Consume-once store | Yes | No | No | No |
-| Installer / store detection | Yes | No | No | No |
-| Debug override + testing guide | Yes | No | No | No |
+Other Flutter plugins read the Play Install Referrer too, and one of them
+may be all you need:
 
-"Crash" in the null-details row: every getter of Play's `ReferrerDetails`
-reads its bundle, so a null bundle throws `NullPointerException` on the
-first read, and each of those plugins makes that read while building its
-result, outside any `try`, on the main thread.
+- [`play_install_referrer`](https://pub.dev/packages/play_install_referrer):
+  Play's referrer details as one object. Its 0.6.0, on the project's default
+  branch at the time of writing, moves to Built-in Kotlin and guards a null
+  details bundle.
+- [`android_play_install_referrer`](https://pub.dev/packages/android_play_install_referrer):
+  Play's referrer details, with the response codes as errors.
+- [`stack_deferred_link`](https://pub.dev/packages/stack_deferred_link):
+  Play's referrer plus an iOS clipboard flow and a link pattern matcher.
 
-Based on each project's public default branch and issue tracker in October
-2026. Corrections are welcome.
+This plugin is worth the switch when you also want the iOS AdServices token,
+typed failure reasons, a timeout off the platform thread, consume-once
+claiming, or the allowlisted deep-link helper. The
+[migration notes](#from-play_install_referrer) map each API. Thanks to the
+maintainers of these plugins for the groundwork. Projects move quickly; if
+anything here is out of date, please open an issue.
 
 ## FAQ
 
