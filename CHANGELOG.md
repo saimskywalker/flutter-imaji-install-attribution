@@ -3,8 +3,9 @@
 - README: the comparison table is replaced by an Alternatives section that
   describes each plugin without per-feature verdicts, and the "Why this
   exists" table now describes the platform's traps rather than other
-  plugins. `play_install_referrer` 0.6.0 moves to Built-in Kotlin and guards
-  a null details bundle, which the old table did not reflect.
+  plugins. `play_install_referrer` 0.6.0 moved to Built-in Kotlin, reads the
+  referrer off the main thread with a timeout and guards a null details
+  bundle, which the old table did not reflect.
 - README: a Trademarks section for the Google and Apple names.
 
 ## 0.2.0
