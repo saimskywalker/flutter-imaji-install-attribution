@@ -411,7 +411,7 @@ it.
 - **[TESTING.md](TESTING.md)**: how to see a real referrer. Only a build that
   Google Play installed has one; side-loads never do.
 
-## Migrating from other plugins
+## Adopting in an app that already reads the referrer
 
 **If your app already shipped referrer handling, call `adoptExistingState`
 first.** Without it, an existing user can be routed to a stale link on the
@@ -431,75 +431,36 @@ final result = await InstallAttribution.readOnce();
 `true` marks the install handled; `false` changes nothing. It is idempotent,
 so calling it on every launch is fine.
 
-### From `play_install_referrer`
+### Mapping Play's fields and response codes
+
+Play's `ReferrerDetails` fields map to `Attributed` like this:
+`getInstallReferrer()` → `referrer.raw`; `getReferrerClickTimestampSeconds()`
+→ `clickedAt` (a UTC `DateTime`, `null` when Play reports 0);
+`getInstallBeginTimestampSeconds()` → `installBeganAt`; `getInstallVersion()`
+→ `installVersion`; the `*ServerSeconds` values → `clickedAtServer` /
+`installBeganAtServer`.
 
 ```dart
-// Before
-try {
-  final details = await PlayInstallReferrer.installReferrer;
-  handle(details.installReferrer, details.referrerClickTimestampSeconds);
-} catch (e) {
-  // PlatformException
-}
-
-// After
 if (await InstallAttribution.read()
     case Attributed(:final referrer?, :final clickedAt)) {
   handle(referrer.raw, clickedAt);
 }
 ```
 
-`referrerClickTimestampSeconds` → `clickedAt` (a UTC `DateTime`, `null`
-when Play reports 0); `installBeginTimestampSeconds` → `installBeganAt`;
-`installVersion` → `installVersion`; the `*ServerSeconds` values →
-`clickedAtServer` / `installBeganAtServer`.
+`InstallReferrerResponse` codes become reasons: `FEATURE_NOT_SUPPORTED` →
+`featureNotSupported`, `PERMISSION_ERROR` → `permissionError`,
+`SERVICE_UNAVAILABLE` → `serviceUnavailable`, `SERVICE_DISCONNECTED` →
+`serviceDisconnected`, and a `DeadObjectException` → `deadService`.
 
-If you split the referrer yourself, note which decoder you used. With
-`Uri.splitQueryString` or `Uri.decodeQueryComponent` (form decoding,
-`+` → space), the default matches. With `Uri.decodeComponent`, pass
-`decoding: ReferrerDecoding.rfc3986`.
-
-### From `android_play_install_referrer`
-
-```dart
-// Before
-final info = await AndroidPlayInstallReferrer.installReferrer;
-final source = Uri.splitQueryString(info.installReferrer ?? '')['utm_source'];
-
-// After
-final source = switch (await InstallAttribution.read()) {
-  Attributed(:final referrer?) => referrer.utmSource,
-  _ => null,
-};
-```
-
-Error codes become reasons: `FEATURE_NOT_SUPPORTED` → `featureNotSupported`,
-`PERMISSION_ERROR` → `permissionError`, `SERVICE_UNAVAILABLE` →
-`serviceUnavailable`, `SERVICE_DISCONNECTED` → `serviceDisconnected`,
-`DeadObjectException` → `deadService`.
-
-### From `stack_deferred_link`
-
-```dart
-// Before
-final info = await StackDeferredLink.getInstallReferrerAndroid();
-final path = Uri.decodeComponent(info.installReferrer); // decodes again
-
-// After
-final link = switch (await InstallAttribution.read()) {
-  Attributed(:final referrer?) => referrer.deepLink(allow: ['/items/']),
-  _ => null,
-};
-```
-
-Drop any extra `Uri.decodeComponent` on referrer values: `parameters` are
-already decoded once, and decoding again corrupts paths containing `%2F`.
-If your old code decoded the values themselves with `Uri.decodeComponent`
-(RFC 3986, where `+` stays `+`), construct the referrer with
-`InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)` to keep the same
-answers; see [the decoding rule](#the-decoding-rule). On
-iOS this plugin reads the AdServices token rather than the clipboard; keep a
-clipboard or "paste link" flow of your own if you rely on one.
+If your code split or decoded the referrer itself, note which decoder it
+used. `parameters` are already decoded once, and decoding again corrupts
+paths containing `%2F`. With `Uri.splitQueryString` or
+`Uri.decodeQueryComponent` (form decoding, `+` → space) the default matches;
+with `Uri.decodeComponent` (RFC 3986, where `+` stays `+`), construct the
+referrer with `InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)`; see
+[the decoding rule](#the-decoding-rule). On iOS this plugin reads the
+AdServices token and never the clipboard; keep a clipboard or "paste link"
+flow of your own if you rely on one.
 
 ## Alternatives
 
@@ -516,11 +477,11 @@ may be all you need:
 - [`stack_deferred_link`](https://pub.dev/packages/stack_deferred_link):
   Play's referrer plus an iOS clipboard flow and a link pattern matcher.
 
-This plugin is worth the switch when you also want the iOS AdServices token,
-typed failure reasons, consume-once claiming, installer detection, or the
-allowlisted deep-link helper. The
-[migration notes](#from-play_install_referrer) map each API. Thanks to the
-maintainers of these plugins for the groundwork. Projects move quickly; if
+This plugin covers a wider job, install attribution on both platforms: the
+iOS AdServices token, typed failure reasons, consume-once claiming, installer
+detection and the allowlisted deep-link helper. If reading the Android
+referrer is all you need, any of the plugins above may suit you better.
+Thanks to the maintainers of these plugins for their work. Projects move quickly; if
 anything here is out of date, please open an issue.
 
 ## FAQ

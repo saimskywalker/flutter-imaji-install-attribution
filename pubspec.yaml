@@ -1,8 +1,8 @@
 name: imaji_install_attribution
 description: >-
   Flutter plugin: Play Install Referrer (Android) and Apple AdServices (iOS)
-  for install attribution and deferred deep links. Typed results, no Kotlin
-  Gradle Plugin.
+  for install attribution and deferred deep links, with typed results and
+  first-launch-only reads.
 version: 0.2.1
 repository: https://github.com/saimskywalker/flutter-imaji-install-attribution
 issue_tracker: https://github.com/saimskywalker/flutter-imaji-install-attribution/issues

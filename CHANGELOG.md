@@ -7,6 +7,9 @@
   referrer off the main thread with a timeout and guards a null details
   bundle, which the old table did not reflect.
 - README: a Trademarks section for the Google and Apple names.
+- README: the per-plugin migration notes are replaced by a mapping from
+  Play's own fields and response codes, and the package description no
+  longer leads with a difference that every referrer plugin now shares.
 
 ## 0.2.0
 
