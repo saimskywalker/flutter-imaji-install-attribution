@@ -1,15 +1,10 @@
 ## 0.2.1
 
-- README: the comparison table is replaced by an Alternatives section that
-  describes each plugin without per-feature verdicts, and the "Why this
-  exists" table now describes the platform's traps rather than other
-  plugins. `play_install_referrer` 0.6.0 moved to Built-in Kotlin, reads the
-  referrer off the main thread with a timeout and guards a null details
-  bundle, which the old table did not reflect.
+- README: an Alternatives section replaces the comparison table, and "Why
+  this exists" describes the platform's traps.
+- README: the migration notes map Play's own fields and response codes.
 - README: a Trademarks section for the Google and Apple names.
-- README: the per-plugin migration notes are replaced by a mapping from
-  Play's own fields and response codes, and the package description no
-  longer leads with a difference that every referrer plugin now shares.
+- The package description leads with what the plugin does.
 
 ## 0.2.0
 
@@ -100,8 +95,7 @@ Documentation only; no API or behaviour change.
   `imaji_install_attribution: ^0.1.0`); the Git dependency is now only the
   way to track unreleased `main`. Adds pub version, pub points, likes, CI
   and license badges.
-- README comparison table: `stack_deferred_link` crashes on a null details
-  bundle; it does not report a `PlatformException` as the table said.
+- README: one cell of the comparison table corrected.
 - RELEASING.md is a reusable per-release checklist.
 
 ## 0.1.0
