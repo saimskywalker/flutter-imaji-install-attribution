@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 /// contains an encoded slash (`/tags/a%2Fb`) would turn into `/tags/a/b`.
 /// Nothing in this class decodes twice.
 ///
-/// The parsing rule, exactly (the README's "decoding rule" section, and the
+/// The parsing rule, exactly (`doc/decoding.md` in the repository, and the
 /// language-neutral vectors in `test/vectors/deep_link_vectors.json`):
 ///
 /// 1. Split [raw] on `&`. Skip empty pieces.
