@@ -1,3 +1,9 @@
+## Unreleased
+
+- README: shorter, with a verified quick start and example output. The
+  detailed guides moved to `doc/` (API, consume once, decoding rule,
+  migration, setup, FAQ) and `CONTRIBUTING.md`.
+
 ## 0.2.1
 
 - README: an Alternatives section replaces the comparison table, and "Why

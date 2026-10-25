@@ -202,9 +202,9 @@ abstract final class InstallAttribution {
   ///   the install flow" check, asked before Play is. When it answers `true`
   ///   the install is handled without a read. Make it require **both**
   ///   "signed in" and "the first run already completed on this device", and
-  ///   keep the first-run flag out of backups — see the README recipe. A
-  ///   check that throws counts as "don't know": `null` is returned, nothing
-  ///   is marked, and the next launch asks again.
+  ///   keep the first-run flag out of backups — see the recipe in
+  ///   `doc/consume-once.md`. A check that throws counts as "don't know":
+  ///   `null` is returned, nothing is marked, and the next launch asks again.
   ///
   /// Never throws.
   static Future<InstallAttributionResult?> readOnce({
