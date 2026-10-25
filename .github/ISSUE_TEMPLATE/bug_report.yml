@@ -1,0 +1,95 @@
+name: Bug report
+description: A result, a crash, or a build problem that looks wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing a "no referrer" report, please check
+        [TESTING.md](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/TESTING.md):
+        a real Play referrer only exists for a build that Google Play installed.
+        Replace real referrers, tokens and user identifiers with made-up values.
+        Security problems go through the Security tab, not here.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - imaji_install_attribution
+        - imaji_referrer_builder
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "0.2.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android
+        - iOS
+        - Both
+        - Dart only (imaji_referrer_builder)
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Output of `flutter --version` (or `dart --version`), the device or
+        emulator and its OS version, and how the app was installed (Play
+        internal testing, internal app sharing, production, `flutter run`,
+        side-loaded APK, TestFlight).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest code (and referrer or deep link string) that shows the problem.
+      render: dart
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: The result you got, plus any logs or build output.
+    validations:
+      required: true
+  - type: dropdown
+    id: ai-use
+    attributes:
+      label: Did you use an AI tool to write this issue?
+      options:
+        - "No"
+        - "Yes, for parts"
+        - "Yes, mostly"
+    validations:
+      required: true
+  - type: input
+    id: ai-tool
+    attributes:
+      label: If yes, which tool and model?
+      description: Required if you answered yes above.
+      placeholder: "e.g. Claude Code, Opus 5.5"
+  - type: checkboxes
+    id: own-words
+    attributes:
+      label: Your own words
+      options:
+        - label: I wrote this issue in my own words.
+          required: true
