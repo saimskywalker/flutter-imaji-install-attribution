@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/saimskywalker/flutter-imaji-install-attribution/security/advisories/new
+    about: Please report security problems privately, not as a public issue.
+  - name: Testing guide
+    url: https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/TESTING.md
+    about: Why a referrer is missing outside a Play-installed build, and how to see a real one.
