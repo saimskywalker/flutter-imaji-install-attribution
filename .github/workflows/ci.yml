@@ -214,6 +214,12 @@ jobs:
       - name: Build release APK
         # Same R8 output as the bundle; an APK can be installed with adb.
         run: flutter build apk --release
+      - name: Free disk space for the emulator image
+        # The Play Store system image does not fit next to the build
+        # otherwise. Nothing below needs these preinstalled tools.
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/local/lib/android/sdk/ndk
+          df -h /
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
