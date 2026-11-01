@@ -13,7 +13,7 @@
 // its classpath (every Flutter 3.44+ app template does).
 
 group = "io.github.saimskywalker.wherefrom"
-version = "0.3.0"
+version = "0.4.0"
 
 buildscript {
     repositories {

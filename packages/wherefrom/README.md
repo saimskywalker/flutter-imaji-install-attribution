@@ -34,7 +34,7 @@ stores ([setup details](https://github.com/saimskywalker/wherefrom/blob/main/pac
 ## Coming from imaji_install_attribution
 
 This package was `imaji_install_attribution` up to 0.2.2. Replace the
-dependency with `wherefrom: ^0.3.0` and the import with
+dependency with `wherefrom: ^0.4.0` and the import with
 `package:wherefrom/wherefrom.dart`; fakes in tests extend
 `WherefromPlatform`. An upgraded app keeps its consume-once state. See the
 [CHANGELOG](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/CHANGELOG.md).

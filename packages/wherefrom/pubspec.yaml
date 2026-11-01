@@ -3,7 +3,7 @@ description: >-
   Flutter plugin: Play Install Referrer (Android) and Apple AdServices (iOS)
   for install attribution and deferred deep links, with typed results and
   first-launch-only reads.
-version: 0.3.0
+version: 0.4.0
 repository: https://github.com/saimskywalker/wherefrom/tree/main/packages/wherefrom
 issue_tracker: https://github.com/saimskywalker/wherefrom/issues
 topics:

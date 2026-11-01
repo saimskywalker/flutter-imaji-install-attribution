@@ -18,7 +18,7 @@ or add it to `pubspec.yaml` yourself:
 
 ```yaml
 dependencies:
-  wherefrom: ^0.3.0
+  wherefrom: ^0.4.0
 ```
 
 ## Tracking `main`
