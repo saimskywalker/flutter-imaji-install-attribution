@@ -181,6 +181,56 @@ jobs:
             exit 1
           fi
 
+  android_release:
+    # What Play receives: a release bundle shrunk by R8 (full mode), signed
+    # with the debug key. Scripts in .github/scripts run the same checks
+    # locally after a release build.
+    name: Android release (R8 bundle, manifest, smoke test)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: packages/imaji_install_attribution/example
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build release app bundle
+        run: flutter build appbundle --release
+      - name: R8 shrank the release build
+        run: test -s build/app/outputs/mapping/release/mapping.txt
+      - name: Merged-manifest contributions match the snapshot
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/merged_manifest_snapshot.py"
+      - name: Native libraries are 16 KB aligned
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/check_native_libs.py" build/app/outputs/bundle/release/app-release.aab
+      - name: Build release APK
+        # Same R8 output as the bundle; an APK can be installed with adb.
+        run: flutter build apk --release
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Release build reads a typed result on an emulator
+        # A Play Store image, so read() goes through the Install Referrer
+        # service's Binder interface after R8.
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis_playstore
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: .github/scripts/android_release_smoke.sh packages/imaji_install_attribution/example/build/app/outputs/flutter-apk/app-release.apk
+
   ios:
     name: iOS (example build)
     # macOS minutes are free only for public repositories.
@@ -197,3 +247,45 @@ jobs:
       - name: Build example for the simulator
         working-directory: packages/imaji_install_attribution/example
         run: flutter build ios --simulator --debug --no-codesign
+
+  ios_release:
+    name: iOS release (${{ matrix.dependency_manager }})
+    if: ${{ !github.event.repository.private }}
+    runs-on: macos-15
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        dependency_manager: [SwiftPM, CocoaPods]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build the example for devices
+        if: matrix.dependency_manager == 'SwiftPM'
+        working-directory: packages/imaji_install_attribution/example
+        run: |
+          flutter build ios --release --no-codesign
+          echo "APP=$PWD/build/ios/iphoneos/Runner.app" >> "$GITHUB_ENV"
+      - name: Build a CocoaPods app that uses the plugin, for devices
+        # A new app rather than the example: the example's Xcode project
+        # references the plugin's Swift package, which needs SwiftPM.
+        if: matrix.dependency_manager == 'CocoaPods'
+        run: |
+          flutter config --no-enable-swift-package-manager
+          host="$RUNNER_TEMP/pods_host"
+          flutter create --platforms=ios --org com.example --project-name pods_host "$host"
+          cp packages/imaji_install_attribution/example/lib/main.dart "$host/lib/main.dart"
+          cd "$host"
+          flutter pub add imaji_install_attribution --path "$GITHUB_WORKSPACE/packages/imaji_install_attribution"
+          flutter build ios --release --no-codesign
+          if ! grep -q '^  - imaji_install_attribution ' ios/Podfile.lock; then
+            echo "::error::the plugin was not installed through CocoaPods"
+            exit 1
+          fi
+          echo "APP=$host/build/ios/iphoneos/Runner.app" >> "$GITHUB_ENV"
+      - name: Privacy manifest is in the app bundle
+        run: .github/scripts/check_ios_privacy_manifest.sh "$APP"

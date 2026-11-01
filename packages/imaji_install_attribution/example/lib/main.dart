@@ -45,6 +45,10 @@ class _AttributionPageState extends State<AttributionPage> {
     );
     final source = await InstallAttribution.installSource();
     final handled = await InstallAttribution.isHandled();
+    // Also read by CI's release smoke test, which checks a release build
+    // reaches the plugin after R8.
+    debugPrint('read(): $result');
+    debugPrint('installSource(): $source');
     if (!mounted) return;
     setState(() {
       _result = result;

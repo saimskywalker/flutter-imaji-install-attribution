@@ -58,3 +58,22 @@ classpath. Flutter 3.47 requires 2.2.20+, while AGP 9.1 alone brings 2.2.10,
 so keep the template's `id("org.jetbrains.kotlin.android") version "2.4.0"
 apply false` in the app's `settings.gradle.kts`. It is a version pin, applied
 to no module, and Flutter does not warn about it.
+
+## Release builds
+
+CI builds the example the way a store receives it, on every push
+([workflow](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml)):
+
+- **R8.** A release app bundle, shrunk by R8 in full mode (AGP's default),
+  is installed on an emulator and must get a typed result from `read()`.
+  The plugin needs no keep rules in your app.
+- **Merged manifest.** The plugin adds one `<queries>` entry, and the
+  Install Referrer library one permission, to your app's manifest.
+  [`merged-manifest.snapshot.xml`](merged-manifest.snapshot.xml) is the exact
+  list; CI fails if a release build adds anything else.
+- **16 KB pages.** The plugin ships no native code, so it cannot break
+  Android's 16 KB page size requirement. CI checks that every `.so` in the
+  bundle is 16 KB aligned.
+- **iOS.** Release builds for devices with Swift Package Manager (the
+  example) and with CocoaPods (a new app with Swift Package Manager turned
+  off). Both must contain the plugin's `PrivacyInfo.xcprivacy`.

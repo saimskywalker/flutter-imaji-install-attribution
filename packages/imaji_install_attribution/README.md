@@ -27,8 +27,9 @@ flutter pub add imaji_install_attribution
 ```
 
 Flutter 3.44+ / Dart 3.12+, Android minSdk 21, iOS 15. Swift Package Manager
-and CocoaPods both work. Nothing to configure on Android or iOS
-([setup details](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/setup.md)).
+and CocoaPods both work. Nothing to configure on Android or iOS, no R8 keep
+rules, no native code (16 KB page ready); CI builds release versions for both
+stores ([setup details](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/setup.md#release-builds)).
 
 ## Quick start
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What imaji_install_attribution adds to an app's merged AndroidManifest.xml
+  in a release build. Generated from the example app by
+  .github/scripts/merged_manifest_snapshot.py; CI fails when the build
+  differs. Regenerate with that script's update flag after a release build.
+  ${applicationId} stands for the host app's application ID.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <!-- from :imaji_install_attribution -->
+        <package android:name="com.android.vending" />
+    </queries>
+    <!-- from com.android.installreferrer:installreferrer -->
+    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
+</manifest>

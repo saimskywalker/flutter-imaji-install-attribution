@@ -31,7 +31,10 @@ documentation, a minor for features while the package is `0.x`.
       reports 0 warnings and the archive lists no `packages/` folder (CI
       runs it on every push).
 - [ ] CI is green: `Dart (format, analyze, test)`,
-      `Android (example build, Kotlin unit tests)` and `iOS (example build)`.
+      `Android (example build, Kotlin unit tests)`, `iOS (example build)`,
+      `Android release (R8 bundle, manifest, smoke test)` and both
+      `iOS release` jobs. If the merged-manifest snapshot changed, the
+      release notes say what the plugin now adds to an app's manifest.
 - [ ] Optional: `dart pub global activate pana && pana .` in the package
       folder scores 160/160.
 
