@@ -1,4 +1,4 @@
-## [Unreleased]
+## 0.4.0
 
 - **Breaking:** the UTM getters moved into a small value class.
   `referrer.utmSource`, `utmMedium`, `utmCampaign`, `utmContent` and

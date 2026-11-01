@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'wherefrom'
-  s.version          = '0.3.0'
+  s.version          = '0.4.0'
   s.summary          = 'Install attribution for Flutter: Apple AdServices token on iOS.'
   s.description      = <<-DESC
 Flutter plugin that reads the Google Play Install Referrer on Android and the
