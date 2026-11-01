@@ -1,3 +1,10 @@
+## Unreleased
+
+- CI builds release versions: an R8-shrunk Android app bundle that runs on
+  an emulator, and iOS device builds with Swift Package Manager and with
+  CocoaPods. `doc/merged-manifest.snapshot.xml` lists what the plugin adds
+  to an app's merged manifest (#34).
+
 ## 0.2.2
 
 - The plugin moved to `packages/imaji_install_attribution` in the

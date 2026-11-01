@@ -18,6 +18,23 @@ flutter test
 (cd example && flutter build ios --simulator --debug --no-codesign)
 ```
 
+CI also builds release versions. To run the Android checks locally (from the
+repository root, with an emulator running for the last one):
+
+```bash
+(cd packages/imaji_install_attribution/example && flutter build appbundle --release && flutter build apk --release)
+python3 .github/scripts/merged_manifest_snapshot.py   # --update to accept a manifest change
+python3 .github/scripts/check_native_libs.py packages/imaji_install_attribution/example/build/app/outputs/bundle/release/app-release.aab
+.github/scripts/android_release_smoke.sh packages/imaji_install_attribution/example/build/app/outputs/flutter-apk/app-release.apk
+```
+
+and on iOS:
+
+```bash
+(cd packages/imaji_install_attribution/example && flutter build ios --release --no-codesign)
+.github/scripts/check_ios_privacy_manifest.sh packages/imaji_install_attribution/example/build/ios/iphoneos/Runner.app
+```
+
 The pure-Dart builder in `packages/imaji_referrer_builder` has its own CI job
 (Dart 3.8.0 and stable):
 
