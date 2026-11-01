@@ -1,5 +1,5 @@
 // The parser half of the shared vectors in test/vectors/referrer_vectors.json.
-// packages/imaji_referrer_builder/test/referrer_vectors_test.dart reads the
+// ../imaji_referrer_builder/test/referrer_vectors_test.dart reads the
 // same file for the builder half: the builder must emit these referrers and
 // store URLs byte for byte, and the app must route these links from them.
 import 'dart:convert';

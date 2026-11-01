@@ -1,3 +1,10 @@
+## Unreleased
+
+- README: the shared vectors moved with the Flutter plugin to
+  `packages/imaji_install_attribution/test/vectors/referrer_vectors.json`
+  in the repository. Older tags (up to `imaji_referrer_builder-v0.1.1` and
+  `v0.2.1`) keep them at `test/vectors/`. No API change.
+
 ## 0.1.1
 
 Packaging: shorter package description so pub.dev search shows it whole.

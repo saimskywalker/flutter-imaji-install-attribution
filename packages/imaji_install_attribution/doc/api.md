@@ -81,7 +81,7 @@ store links whose referrer is encoded exactly once. See
 ### Building links on a server
 
 Store links are usually built by a backend, which cannot import a Flutter
-package. [`imaji_referrer_builder`](../packages/imaji_referrer_builder) is
+package. [`imaji_referrer_builder`](../../imaji_referrer_builder) is
 the same builder in pure Dart with no dependencies: it appends the path to a
 configured campaign string without changing it, encodes it once, and
 refuses paths the app would not route. Its README lists the five rules a

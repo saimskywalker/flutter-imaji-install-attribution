@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
 Flutter plugin that reads the Google Play Install Referrer on Android and the
 Apple AdServices attribution token on iOS behind one typed Dart API.
                        DESC
-  s.homepage         = 'https://github.com/saimskywalker/flutter-imaji-install-attribution'
+  s.homepage         = 'https://github.com/saimskywalker/flutter-imaji-install-attribution/tree/main/packages/imaji_install_attribution'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'saimskywalker' => '15120878+saimskywalker@users.noreply.github.com' }
   s.source           = { :path => '.' }

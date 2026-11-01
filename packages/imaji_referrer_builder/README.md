@@ -137,13 +137,13 @@ app: one decode        /items/a b  ->  routes /items/a%20b
 
 ## Test your builder against the shared vectors
 
-[`test/vectors/referrer_vectors.json`](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/test/vectors/referrer_vectors.json)
+[`test/vectors/referrer_vectors.json`](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/test/vectors/referrer_vectors.json)
 holds rows of `campaign` + `path` → `referrer_as_play_returns_it`,
 `play_url_referrer_param`, `play_store_url` and `expected_deep_link`, plus
 `refused` rows a builder must reject. This package's tests and the Flutter
 plugin's tests both read it, so the builder and the parser cannot drift
 apart. A builder in any other language can pin the same file — fetch
-`https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/<tag-or-commit>/test/vectors/referrer_vectors.json`
+`https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/<tag-or-commit>/packages/imaji_install_attribution/test/vectors/referrer_vectors.json`
 in its tests. A Python builder that passes every row:
 
 ```python
