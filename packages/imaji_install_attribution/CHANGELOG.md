@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.2
 
 - The plugin moved to `packages/imaji_install_attribution` in the
   repository, so the published archive holds only this package and the iOS
