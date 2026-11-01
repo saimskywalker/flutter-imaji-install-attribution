@@ -10,7 +10,7 @@ The plugin's contribution is every manifest element or attribute that the
 manifest merger attributes to the plugin module or to a library on its
 runtime classpath (Flutter's embedding and its AndroidX dependencies are left
 out: every Flutter app has them). The result is compared with
-packages/imaji_install_attribution/doc/merged-manifest.snapshot.xml, so a new
+packages/wherefrom/doc/merged-manifest.snapshot.xml, so a new
 permission, query or component from a dependency bump fails CI.
 """
 
@@ -25,16 +25,16 @@ import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-PLUGIN = os.path.join(ROOT, "packages", "imaji_install_attribution")
+PLUGIN = os.path.join(ROOT, "packages", "wherefrom")
 EXAMPLE = os.path.join(PLUGIN, "example")
 SNAPSHOT = os.path.join(PLUGIN, "doc", "merged-manifest.snapshot.xml")
-PLUGIN_PROJECT = ":imaji_install_attribution"
+PLUGIN_PROJECT = ":wherefrom"
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
 
 HEADER = """\
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  What imaji_install_attribution adds to an app's merged AndroidManifest.xml
+  What wherefrom adds to an app's merged AndroidManifest.xml
   in a release build. Generated from the example app by
   .github/scripts/merged_manifest_snapshot.py; CI fails when the build
   differs. Regenerate with that script's update flag after a release build.

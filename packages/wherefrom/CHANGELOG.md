@@ -1,0 +1,162 @@
+## 0.3.0
+
+- Renamed from `imaji_install_attribution`. To migrate, replace the
+  dependency (`imaji_install_attribution: ^0.2.2` → `wherefrom: ^0.3.0`) and
+  the import (`package:imaji_install_attribution/imaji_install_attribution.dart`
+  → `package:wherefrom/wherefrom.dart`). Test fakes extend
+  `WherefromPlatform`, formerly `ImajiInstallAttributionPlatform`. The method
+  channel is now `io.github.saimskywalker/wherefrom`, so the old and new
+  packages never share a native side if both end up in one app. No other
+  API change. The consume-once marker, the failed-read count and the
+  first-start record keep their file names, so an upgraded app keeps its
+  state.
+- Native names follow: Android package `io.github.saimskywalker.wherefrom`,
+  plugin class `WherefromPlugin` on Android and iOS, CocoaPods pod and
+  Swift package `wherefrom`. The repository is now
+  `github.com/saimskywalker/wherefrom` and the plugin lives in
+  `packages/wherefrom`.
+- CI builds release versions: an R8-shrunk Android app bundle that runs on
+  an emulator, and iOS device builds with Swift Package Manager and with
+  CocoaPods. `doc/merged-manifest.snapshot.xml` lists what the plugin adds
+  to an app's merged manifest (#34).
+
+## 0.2.2
+
+- The plugin moved to `packages/imaji_install_attribution` in the
+  repository, so the published archive holds only this package and the iOS
+  example builds from a clone in any folder (#44, #15). The `repository:`
+  URL points there. To track `main` with a git dependency, add
+  `path: packages/imaji_install_attribution`. The shared test vectors are
+  now under `packages/imaji_install_attribution/test/vectors/`. No API
+  change.
+- README: shorter, with a verified quick start and example output. The
+  detailed guides moved to `doc/` (API, consume once, decoding rule,
+  migration, setup, FAQ) and `CONTRIBUTING.md`.
+
+## 0.2.1
+
+- README: an Alternatives section replaces the comparison table, and "Why
+  this exists" describes the platform's traps.
+- README: the migration notes map Play's own fields and response codes.
+- README: a Trademarks section for the Google and Apple names.
+- The package description leads with what the plugin does.
+
+## 0.2.0
+
+**Behaviour change:** `readOnce()` no longer re-delivers an old referrer to
+an install that existed before the plugin did (#30).
+
+- `readOnce({treatUpgradesAsHandled = true})`: on Android, an install that
+  was updated since it was installed, and whose first start with the plugin
+  came after that update, is marked handled and gets `null`. Before, the
+  first launch after an app adopted the plugin in an update re-delivered
+  Play's referrer, up to 90 days old, to every existing user. The plugin now
+  records its first start in `noBackupFilesDir`. Pass `false` for the 0.1
+  behaviour.
+  - An install that started on 0.1.x counts as adopted in an update on its
+    first 0.2.0 launch (0.1.x kept no first-seen record) and is marked
+    handled. It already had its first launch under 0.1.x. Pass
+    `treatUpgradesAsHandled: false` if an app on 0.1.x still needs that
+    install's referrer.
+- `readOnce({maxClickAge})`: a Play click older than the limit is marked
+  handled. Uses `clickedAtServer` when reported, else `clickedAt`; an
+  unknown click time is never stale. Default: no limit.
+- `readOnce({pastInstallFlow})`: the app's own "past the install flow" check;
+  `true` marks the install handled without a Play read. README recipe:
+  require signed in **and** a first run completed on this device, with the
+  first-run flag kept out of backups.
+- `InstallAttribution.lastSkipReason` (`ReadOnceSkip`) says why `readOnce()`
+  returned `null`.
+- `InstallAttribution.adoptExistingState(alreadyHandled:)`: one-time
+  migration from referrer handling an app shipped before the plugin.
+- `InstallAttribution.installFacts()` and `InstallFacts`. Platform
+  implementations get a default `installFacts()` that returns `null`.
+- Android: `markHandled()` keeps an existing marker instead of rewriting it.
+- iOS: `treatUpgradesAsHandled` and `maxClickAge` are no-ops.
+- `InstallAttribution.claimOnce()` returns an `InstallClaim`
+  (`complete()` / `release()`) (#31):
+  - One claim per process: a concurrent `claimOnce()` returns `null`
+    (`claimedElsewhere`).
+  - A persisted failed-read budget, `maxFailedReads` (default 3). After it
+    the install is marked handled and Play is not asked again.
+  - `terminal` reasons (default `{playStoreMissing}`) mark the install
+    handled at once.
+  - The count lives next to the handled marker, outside backups, and
+    `clearHandled()` clears it.
+  - `failedReads()`, `lastFailure`, and the `ReadOnceSkip` values
+    `claimedElsewhere`, `readFailed`, `terminalFailure` and `budgetSpent`.
+  - Platform interface: `failedReads()` / `recordFailedRead()`. A platform
+    without them gets the lock but no budget.
+- Android: the Play Store presence check (`PackageManager.getPackageInfo`, a
+  Binder call) moved from the platform thread to the worker thread (#31).
+  No Binder call in `read` runs on the main thread now.
+- README quick start uses `claimOnce()`.
+- `InstallReferrer.deepLinkResult()` / `resolveDeepLinkResult()` return a
+  sealed `DeepLinkResult`: `DeepLinkFound(uri)`, or
+  `DeepLinkRejected(reason)` with a `DeepLinkRejection` (#29). The reasons
+  are `absent`, `unsafe`, `undecodable`, `notAPath`, `hostNotAllowed`,
+  `looksDoubleEncoded` and `notAllowlisted`. A double-encoded value is
+  reported, never repaired. `deepLink()` is `deepLinkResult().uriOrNull`.
+- `InstallReferrer(raw, decoding: ReferrerDecoding.rfc3986)`: opt-in RFC
+  3986 value decoding, where `+` stays `+`. `ReferrerDecoding.form`
+  (`application/x-www-form-urlencoded`) stays the default. `withDecoding()`
+  re-reads the same raw string. Equality now includes the decoding.
+- Fix: a `.` or `..` segment is refused as written. `Uri.parse` normalised
+  `/items/../admin` to `/admin`, and `/items/../items/42` to `/items/42`
+  (accepted), before the check could see the segment.
+- `test/vectors/deep_link_vectors.json`: language-neutral vectors for the
+  decoding rule and the link builder. The README documents the rule and
+  shows how a backend in any language can test against the file.
+
+## 0.1.2
+
+- Fix: `InstallReferrer.deepLink()` and `InstallReferrer.resolveDeepLink()`
+  never throw. A value with a percent escape that is not UTF-8 (`%FF`,
+  `%C3`, a truncated `%E2%82`) threw `FormatException` instead of returning
+  `null`; it is now refused, like a malformed escape (`%`, `%ZZ`), which
+  `Uri.parse` used to rewrite silently into `%25`. The check covers the
+  query and fragment too, so a returned link's own `queryParameters` can no
+  longer throw. Unescaped non-ASCII text (`/items/café`) is still accepted;
+  a lone UTF-16 surrogate is refused. A fuzz test over every `%XX` escape
+  and random input pins it, and a differential test against the 0.1.1
+  algorithm checks nothing else changed.
+
+## 0.1.1
+
+Documentation only; no API or behaviour change.
+
+- README: the package is on pub.dev. Install with
+  `flutter pub add imaji_install_attribution` (or
+  `imaji_install_attribution: ^0.1.0`); the Git dependency is now only the
+  way to track unreleased `main`. Adds pub version, pub points, likes, CI
+  and license badges.
+- README: one cell of the comparison table corrected.
+- RELEASING.md is a reusable per-release checklist.
+
+## 0.1.0
+
+First release.
+
+- `InstallAttribution.read({timeout})` returns a sealed
+  `InstallAttributionResult` — `Attributed`, `Organic` or
+  `Unavailable(reason)` — and never throws.
+- Android: Google Play Install Referrer 2.2. The Binder call runs off the
+  platform thread with a timeout; a null details bundle, `DeadObjectException`,
+  `PERMISSION_ERROR`, `FEATURE_NOT_SUPPORTED`, `SERVICE_UNAVAILABLE`,
+  `DEVELOPER_ERROR`, `SERVICE_DISCONNECTED` (after one reconnect) and a missing
+  Play Store each map to a typed `UnavailableReason`.
+- Android: `InstallSource` — installer package via `getInstallSourceInfo`
+  (API 30+) or `getInstallerPackageName`, mapped to Play, Galaxy Store,
+  AppGallery, Amazon, side-load or restore.
+- iOS: Apple AdServices attribution token as
+  `Attributed(source: appleAds, token: ...)`; the simulator reports
+  `Unavailable(notSupported)`. Swift Package Manager and CocoaPods, with a
+  privacy manifest.
+- `InstallReferrer.deepLink(allow: [...])`: decodes exactly once and only
+  returns allowlisted in-app paths.
+- `PlayStoreUrl`: store links whose referrer is encoded exactly once.
+- Opt-in consume-once store: `readOnce()`, `markHandled()`, `isHandled()`,
+  `clearHandled()`.
+- `debugOverride()` for debug builds, and a testing guide (TESTING.md).
+- Built on AGP Built-in Kotlin: no Kotlin Gradle Plugin in any build file.
+  Minimum supported SDK: Flutter 3.44 / Dart 3.12.
