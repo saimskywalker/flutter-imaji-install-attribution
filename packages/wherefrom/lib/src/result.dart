@@ -115,7 +115,7 @@ final class Attributed extends InstallAttributionResult {
     this.installBeganAt,
     this.clickedAtServer,
     this.installBeganAtServer,
-    this.installVersion,
+    this.versionAtInstall,
     super.installSource,
   });
 
@@ -142,7 +142,7 @@ final class Attributed extends InstallAttributionResult {
   final DateTime? installBeganAtServer;
 
   /// The app version that was first installed, when Play reports it.
-  final String? installVersion;
+  final String? versionAtInstall;
 
   @override
   String toString() =>

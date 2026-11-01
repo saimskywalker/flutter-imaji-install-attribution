@@ -25,7 +25,7 @@ Play's `ReferrerDetails` fields map to `Attributed` like this:
 `getInstallReferrer()` → `referrer.raw`; `getReferrerClickTimestampSeconds()`
 → `clickedAt` (a UTC `DateTime`, `null` when Play reports 0);
 `getInstallBeginTimestampSeconds()` → `installBeganAt`; `getInstallVersion()`
-→ `installVersion`; the `*ServerSeconds` values → `clickedAtServer` /
+→ `versionAtInstall`; the `*ServerSeconds` values → `clickedAtServer` /
 `installBeganAtServer`.
 
 ```dart

@@ -53,7 +53,7 @@ internal class PlayReferrerClient(context: Context) : ReferrerClientPort {
             installBeginSeconds = details.installBeginTimestampSeconds,
             clickServerSeconds = details.referrerClickTimestampServerSeconds,
             installBeginServerSeconds = details.installBeginTimestampServerSeconds,
-            installVersion = details.installVersion,
+            versionAtInstall = details.installVersion,
             instantExperienceLaunched = details.googlePlayInstantParam,
         )
     }

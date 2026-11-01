@@ -80,7 +80,7 @@ class ReferrerMappingTest {
             installBeginSeconds = 20,
             clickServerSeconds = 11,
             installBeginServerSeconds = 21,
-            installVersion = "1.0.0",
+            versionAtInstall = "1.0.0",
             instantExperienceLaunched = false,
         )
         val outcome = ReferrerMapping.readDetails { raw }

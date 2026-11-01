@@ -31,8 +31,9 @@ To act on the referrer only once, use `readOnce()` or `claimOnce()`; see
 
 - `raw`: the string exactly as Play returned it.
 - `parameters`, `referrer['key']`: values decoded **exactly once**.
-- `utmSource`, `utmMedium`, `utmCampaign`, `utmContent`, `utmTerm`: `null`
-  when absent or `(not set)`.
+- `utm`: a `UtmParameters` with `source`, `medium`, `campaign`, `content`
+  and `term` (`utm_source` ... `utm_term`), each `null` when absent or
+  `(not set)`.
 - `isOrganic`: the rule `read()` uses.
 - `deepLink({key = 'utm_content', required allow, hosts = const []})`: the
   in-app path, or `null`. Only paths under an allowlisted prefix pass

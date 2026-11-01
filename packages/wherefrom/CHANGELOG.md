@@ -1,3 +1,16 @@
+## [Unreleased]
+
+- **Breaking:** the UTM getters moved into a small value class.
+  `referrer.utmSource`, `utmMedium`, `utmCampaign`, `utmContent` and
+  `utmTerm` are now `referrer.utm.source`, `.medium`, `.campaign`,
+  `.content` and `.term` (`UtmParameters`), with the same `(not set)`
+  handling. The `utm_*` query keys themselves are unchanged.
+- **Breaking:** `Attributed.installVersion` (and the `classifyReferrer`
+  parameter of the same name) is now `versionAtInstall`. It still carries
+  Play's `ReferrerDetails.getInstallVersion()`.
+- No stored state changes: the consume-once marker, the failed-read count
+  and the first-start record keep their file names and contents.
+
 ## 0.3.0
 
 - Renamed from `imaji_install_attribution`. To migrate, replace the

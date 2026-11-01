@@ -28,16 +28,17 @@ void main() {
       expect(r.parameters.containsKey(''), isFalse);
     });
 
-    test('utm getters treat "(not set)" as absent', () {
+    test('utm treats "(not set)" as absent', () {
       final r = InstallReferrer(
         'utm_source=(not%20set)&utm_medium=(not%20set)&utm_campaign=spring',
       );
       expect(r['utm_source'], '(not set)');
-      expect(r.utmSource, isNull);
-      expect(r.utmMedium, isNull);
-      expect(r.utmCampaign, 'spring');
-      expect(r.utmContent, isNull);
-      expect(r.utmTerm, isNull);
+      expect(r.utm.source, isNull);
+      expect(r.utm.medium, isNull);
+      expect(r.utm.campaign, 'spring');
+      expect(r.utm.content, isNull);
+      expect(r.utm.term, isNull);
+      expect(r.utm, const UtmParameters(campaign: 'spring'));
     });
   });
 

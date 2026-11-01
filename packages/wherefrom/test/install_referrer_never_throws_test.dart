@@ -22,11 +22,11 @@ void main() {
       );
     });
     r.isOrganic;
-    r.utmSource;
-    r.utmMedium;
-    r.utmCampaign;
-    r.utmContent;
-    r.utmTerm;
+    r.utm.source;
+    r.utm.medium;
+    r.utm.campaign;
+    r.utm.content;
+    r.utm.term;
     r.toString();
     r.hashCode;
     check(r.deepLink(allow: allow, hosts: hosts), raw);

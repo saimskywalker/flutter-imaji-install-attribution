@@ -54,25 +54,9 @@ class InstallReferrer {
   /// The decoded value for [key], or `null` when it is absent.
   String? operator [](String key) => parameters[key];
 
-  /// `utm_source`, or `null` when absent or `(not set)`.
-  String? get utmSource => _utm('utm_source');
-
-  /// `utm_medium`, or `null` when absent or `(not set)`.
-  String? get utmMedium => _utm('utm_medium');
-
-  /// `utm_campaign`, or `null` when absent or `(not set)`.
-  String? get utmCampaign => _utm('utm_campaign');
-
-  /// `utm_content`, or `null` when absent or `(not set)`.
-  String? get utmContent => _utm('utm_content');
-
-  /// `utm_term`, or `null` when absent or `(not set)`.
-  String? get utmTerm => _utm('utm_term');
-
-  String? _utm(String key) {
-    final value = parameters[key];
-    return isNotSet(value) ? null : value;
-  }
+  /// The standard UTM parameters, each `null` when absent, empty, or
+  /// `(not set)`.
+  UtmParameters get utm => UtmParameters.fromParameters(parameters);
 
   /// Whether this referrer carries no campaign at all.
   ///
@@ -329,6 +313,69 @@ class InstallReferrer {
 
   @override
   String toString() => 'InstallReferrer($raw)';
+}
+
+/// The five standard UTM parameters of a referrer (`utm_source`,
+/// `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`), read through
+/// [InstallReferrer.utm].
+///
+/// Each value is as decoded once by [InstallReferrer.parameters], or `null`
+/// when the key is absent, empty, or Play's `(not set)`.
+@immutable
+final class UtmParameters {
+  /// Creates a set of UTM values directly, for example in a test.
+  const UtmParameters({
+    this.source,
+    this.medium,
+    this.campaign,
+    this.content,
+    this.term,
+  });
+
+  /// Reads the UTM values out of decoded referrer [parameters].
+  UtmParameters.fromParameters(Map<String, String> parameters)
+    : source = _value(parameters, 'utm_source'),
+      medium = _value(parameters, 'utm_medium'),
+      campaign = _value(parameters, 'utm_campaign'),
+      content = _value(parameters, 'utm_content'),
+      term = _value(parameters, 'utm_term');
+
+  /// `utm_source`.
+  final String? source;
+
+  /// `utm_medium`.
+  final String? medium;
+
+  /// `utm_campaign`.
+  final String? campaign;
+
+  /// `utm_content`.
+  final String? content;
+
+  /// `utm_term`.
+  final String? term;
+
+  static String? _value(Map<String, String> parameters, String key) {
+    final value = parameters[key];
+    return InstallReferrer.isNotSet(value) ? null : value;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is UtmParameters &&
+      other.source == source &&
+      other.medium == medium &&
+      other.campaign == campaign &&
+      other.content == content &&
+      other.term == term;
+
+  @override
+  int get hashCode => Object.hash(source, medium, campaign, content, term);
+
+  @override
+  String toString() =>
+      'UtmParameters(source: $source, medium: $medium, '
+      'campaign: $campaign, content: $content, term: $term)';
 }
 
 /// How [InstallReferrer] decodes each referrer value. Either way a value is

@@ -14,7 +14,7 @@ class ReferrerReaderTest {
         installBeginSeconds = 2,
         clickServerSeconds = 3,
         installBeginServerSeconds = 4,
-        installVersion = null,
+        versionAtInstall = null,
         instantExperienceLaunched = false,
     )
 
