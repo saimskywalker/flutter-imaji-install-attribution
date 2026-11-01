@@ -1,3 +1,10 @@
+## Unreleased
+
+- CI builds release versions: an R8-shrunk Android app bundle that runs on
+  an emulator, and iOS device builds with Swift Package Manager and with
+  CocoaPods. `doc/merged-manifest.snapshot.xml` lists what the plugin adds
+  to an app's merged manifest (#34).
+
 ## 0.2.2
 
 - The plugin moved to `packages/imaji_install_attribution` in the
@@ -7,10 +14,6 @@
   `path: packages/imaji_install_attribution`. The shared test vectors are
   now under `packages/imaji_install_attribution/test/vectors/`. No API
   change.
-- CI builds release versions: an R8-shrunk Android app bundle that runs on
-  an emulator, and iOS device builds with Swift Package Manager and with
-  CocoaPods. `doc/merged-manifest.snapshot.xml` lists what the plugin adds
-  to an app's merged manifest (#34).
 - README: shorter, with a verified quick start and example output. The
   detailed guides moved to `doc/` (API, consume once, decoding rule,
   migration, setup, FAQ) and `CONTRIBUTING.md`.
