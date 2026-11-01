@@ -29,7 +29,7 @@ internal data class RawReferrerDetails(
     val installBeginSeconds: Long,
     val clickServerSeconds: Long,
     val installBeginServerSeconds: Long,
-    val installVersion: String?,
+    val versionAtInstall: String?,
     val instantExperienceLaunched: Boolean,
 )
 
@@ -45,7 +45,7 @@ internal sealed class ReferrerOutcome {
             "installBeginSeconds" to details.installBeginSeconds,
             "clickServerSeconds" to details.clickServerSeconds,
             "installBeginServerSeconds" to details.installBeginServerSeconds,
-            "installVersion" to details.installVersion,
+            "versionAtInstall" to details.versionAtInstall,
             "instantExperienceLaunched" to details.instantExperienceLaunched,
         )
     }

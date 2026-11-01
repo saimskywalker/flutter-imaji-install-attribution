@@ -112,7 +112,7 @@ class MethodChannelInstallAttribution extends WherefromPlatform {
           installBeganAt: _seconds(reply['installBeginSeconds']),
           clickedAtServer: _seconds(reply['clickServerSeconds']),
           installBeganAtServer: _seconds(reply['installBeginServerSeconds']),
-          installVersion: reply['installVersion'] as String?,
+          versionAtInstall: reply['versionAtInstall'] as String?,
           installSource: installSource,
         );
       case 'token':
@@ -152,7 +152,7 @@ class MethodChannelInstallAttribution extends WherefromPlatform {
     DateTime? installBeganAt,
     DateTime? clickedAtServer,
     DateTime? installBeganAtServer,
-    String? installVersion,
+    String? versionAtInstall,
     InstallSource? installSource,
   }) {
     final referrer = InstallReferrer(raw ?? '');
@@ -170,7 +170,7 @@ class MethodChannelInstallAttribution extends WherefromPlatform {
       installBeganAt: installBeganAt,
       clickedAtServer: clickedAtServer,
       installBeganAtServer: installBeganAtServer,
-      installVersion: installVersion,
+      versionAtInstall: versionAtInstall,
       installSource: installSource,
     );
   }

@@ -194,7 +194,7 @@ void main() {
       clickedAtServer: fortyDaysAgo,
       installBeganAt: fortyDaysAgo,
       installBeganAtServer: fortyDaysAgo,
-      installVersion: '1.0.0',
+      versionAtInstall: '1.0.0',
     );
 
     setUp(() {
@@ -227,7 +227,7 @@ void main() {
         referrer: oldLink.referrer,
         clickedAt: installed,
         installBeganAt: installed,
-        installVersion: '2.0.0',
+        versionAtInstall: '2.0.0',
       );
       fake.facts = InstallFacts(
         firstInstalledAt: installed,
@@ -439,18 +439,18 @@ void main() {
         () async {
           // After a reinstall the plugin's marker is gone (it is excluded from
           // backups), but Auto Backup restored the app's SharedPreferences,
-          // including its own "first run done" flag and a remembered session.
-          final restoredPrefs = {'signedIn': true, 'firstRunDone': true};
+          // including its own "onboarded" flag and a remembered session.
+          final restoredPrefs = {'signedIn': true, 'onboarded': true};
           // The recipe keeps its first-run flag in no-backup storage instead;
           // a reinstall starts it empty.
           final noBackupStore = <String, bool>{};
 
           bool recipe() =>
               restoredPrefs['signedIn'] == true &&
-              (noBackupStore['firstRunDone'] ?? false);
+              (noBackupStore['onboarded'] ?? false);
           bool naive() =>
               restoredPrefs['signedIn'] == true &&
-              restoredPrefs['firstRunDone'] == true;
+              restoredPrefs['onboarded'] == true;
 
           expect(
             await InstallAttribution.readOnce(pastInstallFlow: recipe),

@@ -38,12 +38,12 @@ void main() {
                 'installBeginSeconds': 1700000060,
                 'clickServerSeconds': 1700000001,
                 'installBeginServerSeconds': 0,
-                'installVersion': '1.2.3',
+                'versionAtInstall': '1.2.3',
                 'instantExperienceLaunched': false,
               })
               as Attributed;
       expect(result.source, AttributionSource.googlePlay);
-      expect(result.referrer!.utmSource, 'newsletter');
+      expect(result.referrer!.utm.source, 'newsletter');
       expect(
         result.clickedAt,
         DateTime.fromMillisecondsSinceEpoch(1700000000000, isUtc: true),
@@ -51,7 +51,7 @@ void main() {
       expect(result.installBeganAt!.isAfter(result.clickedAt!), isTrue);
       expect(result.clickedAtServer, isNotNull);
       expect(result.installBeganAtServer, isNull, reason: '0 means unknown');
-      expect(result.installVersion, '1.2.3');
+      expect(result.versionAtInstall, '1.2.3');
     });
 
     test('the default Play referrer is Organic', () {

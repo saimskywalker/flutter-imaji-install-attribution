@@ -30,7 +30,7 @@ returned, so nothing can route or show a banner about it.
 ```dart
 final result = await InstallAttribution.readOnce(
   maxClickAge: const Duration(days: 7), // your link's lifetime
-  pastInstallFlow: () => session.isSignedIn && firstRunDoneOnThisDevice,
+  pastInstallFlow: () => session.isSignedIn && onboardedOnThisDevice,
 );
 ```
 

@@ -205,7 +205,7 @@ class _ResultCard extends StatelessWidget {
         'Attributed (Google Play)',
         [
           'referrer: ${referrer?.raw}',
-          'utm_source: ${referrer?.utmSource}',
+          'utm_source: ${referrer?.utm.source}',
           'clicked at: $clickedAt',
           'deep link: ${referrer?.deepLink(allow: allowedPaths) ?? 'none (not allowlisted)'}',
         ],

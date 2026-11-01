@@ -161,7 +161,7 @@ the Play Store app directly.
   when it has an install record but no campaign: the store page was opened
   without a usable `referrer`, or a testing track did not forward it. The
   plugin classifies a referrer that contains nothing but `(not set)` / empty
-  `utm_*` values as `Organic`, and `referrer.utmSource` returns `null` for
+  `utm_*` values as `Organic`, and `referrer.utm.source` returns `null` for
   `(not set)`. The raw string is still in `referrer.raw`.
 - **`utm_source=google-play&utm_medium=organic`** — Play's default for an
   install with no referrer (store search, side-load). `Organic`.
