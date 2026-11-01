@@ -4,7 +4,7 @@ description: >-
   for install attribution and deferred deep links, with typed results and
   first-launch-only reads.
 version: 0.2.1
-repository: https://github.com/saimskywalker/flutter-imaji-install-attribution
+repository: https://github.com/saimskywalker/flutter-imaji-install-attribution/tree/main/packages/imaji_install_attribution
 issue_tracker: https://github.com/saimskywalker/flutter-imaji-install-attribution/issues
 topics:
   - flutter

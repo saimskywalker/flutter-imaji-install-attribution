@@ -1,5 +1,12 @@
 ## Unreleased
 
+- The plugin moved to `packages/imaji_install_attribution` in the
+  repository, so the published archive holds only this package and the iOS
+  example builds from a clone in any folder (#44, #15). The `repository:`
+  URL points there. To track `main` with a git dependency, add
+  `path: packages/imaji_install_attribution`. The shared test vectors are
+  now under `packages/imaji_install_attribution/test/vectors/`. No API
+  change.
 - README: shorter, with a verified quick start and example output. The
   detailed guides moved to `doc/` (API, consume once, decoding rule,
   migration, setup, FAQ) and `CONTRIBUTING.md`.

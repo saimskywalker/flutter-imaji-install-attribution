@@ -55,7 +55,8 @@ plugin's own tests check `InstallReferrer` and `PlayStoreUrl` against every
 row. A backend in any language can load the same file. Pin it to a release
 tag, for example
 `https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/v0.2.0/test/vectors/deep_link_vectors.json`
-(available from 0.2.0). For example, in Python:
+(available from 0.2.0; tags after 0.2.1 keep it under
+`packages/imaji_install_attribution/test/vectors/`). For example, in Python:
 
 ```python
 import json, urllib.parse, urllib.request

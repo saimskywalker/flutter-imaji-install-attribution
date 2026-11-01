@@ -32,6 +32,7 @@ dependencies:
   imaji_install_attribution:
     git:
       url: https://github.com/saimskywalker/flutter-imaji-install-attribution.git
+      path: packages/imaji_install_attribution
       ref: main
 ```
 

@@ -8,7 +8,7 @@ turns it into the deep link the user wanted before they installed.
 [![pub points](https://img.shields.io/pub/points/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution/score)
 [![pub likes](https://img.shields.io/pub/likes/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution/score)
 [![CI](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml)
-[![license: MIT](https://img.shields.io/github/license/saimskywalker/flutter-imaji-install-attribution)](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/LICENSE)
+[![license: MIT](https://img.shields.io/github/license/saimskywalker/flutter-imaji-install-attribution)](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/LICENSE)
 
 ## Why
 
@@ -28,7 +28,7 @@ flutter pub add imaji_install_attribution
 
 Flutter 3.44+ / Dart 3.12+, Android minSdk 21, iOS 15. Swift Package Manager
 and CocoaPods both work. Nothing to configure on Android or iOS
-([setup details](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/doc/setup.md)).
+([setup details](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/setup.md)).
 
 ## Quick start
 
@@ -57,7 +57,7 @@ Failures are typed, never thrown: `InstallAttribution.lastSkipReason` and
 `lastFailure` say why `claimOnce()` returned `null`. To try your routing
 without a Play install, call `InstallAttribution.debugOverride(referrer: ...)`
 in a debug build; see the
-[testing guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/TESTING.md).
+[testing guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/TESTING.md).
 
 ## Example output
 
@@ -98,19 +98,19 @@ utm_source=google-play&utm_medium=organic           -> DeepLinkRejected(absent)
 
 ## Documentation
 
-- [API guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/doc/api.md): results, reasons, `InstallReferrer`, `InstallSource`, `PlayStoreUrl`
-- [Consume once](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/doc/consume-once.md): `readOnce()`, upgrade detection, the install-flow recipe, `claimOnce()`
-- [The decoding rule](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/doc/decoding.md) and the language-neutral test vectors
-- [Adopting in an app that already reads the referrer](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/doc/migration.md)
-- [Setup](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/doc/setup.md): requirements, tracking `main`, Android build setup
-- [Testing guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/TESTING.md): how to see a real referrer from Play
-- [FAQ](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/doc/faq.md): ATT, iOS deep links, non-goals, alternatives
+- [API guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/api.md): results, reasons, `InstallReferrer`, `InstallSource`, `PlayStoreUrl`
+- [Consume once](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/consume-once.md): `readOnce()`, upgrade detection, the install-flow recipe, `claimOnce()`
+- [The decoding rule](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/decoding.md) and the language-neutral test vectors
+- [Adopting in an app that already reads the referrer](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/migration.md)
+- [Setup](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/setup.md): requirements, tracking `main`, Android build setup
+- [Testing guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/TESTING.md): how to see a real referrer from Play
+- [FAQ](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/faq.md): ATT, iOS deep links, non-goals, alternatives
 
 ## Links
 
 - [pub.dev page](https://pub.dev/packages/imaji_install_attribution)
 - [API reference](https://pub.dev/documentation/imaji_install_attribution/latest/)
-- [CHANGELOG](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/CHANGELOG.md)
+- [CHANGELOG](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/CHANGELOG.md)
 - [Issues](https://github.com/saimskywalker/flutter-imaji-install-attribution/issues)
 - [Contributing](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/CONTRIBUTING.md)
 
@@ -122,4 +122,4 @@ with, sponsored by or endorsed by Google or Apple.
 
 ## License
 
-MIT © saimskywalker. See [LICENSE](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/LICENSE).
+MIT © saimskywalker. See [LICENSE](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/LICENSE).

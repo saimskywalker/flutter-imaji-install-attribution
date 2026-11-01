@@ -22,6 +22,9 @@ jobs:
     name: Dart (format, analyze, test)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/imaji_install_attribution
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -37,7 +40,7 @@ jobs:
       - name: Test
         run: flutter test
       - name: Example widget test
-        working-directory: example
+        working-directory: packages/imaji_install_attribution/example
         run: flutter test
       - name: Package description is 60-180 characters
         run: |
@@ -62,7 +65,15 @@ jobs:
               sys.exit(1)
           PY
       - name: Publish dry run
-        run: dart pub publish --dry-run
+        shell: bash # -eo pipefail, so a failed dry run is not hidden by tee
+        run: dart pub publish --dry-run 2>&1 | tee "$RUNNER_TEMP/publish.log"
+      - name: Archive holds only this package
+        run: |
+          # The plugin's archive must not pick up the sibling packages.
+          if grep -n "── packages$" "$RUNNER_TEMP/publish.log"; then
+            echo "::error::the pub archive must not contain packages/"
+            exit 1
+          fi
       - name: No Kotlin Gradle Plugin in the plugin build file
         run: |
           # Comments are ignored; any code line naming KGP fails the build.
@@ -138,6 +149,9 @@ jobs:
     name: Android (example build, Kotlin unit tests)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: packages/imaji_install_attribution
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -151,11 +165,11 @@ jobs:
           cache: true
       - uses: gradle/actions/setup-gradle@v4
       - name: Build example APK (android.builtInKotlin=true)
-        working-directory: example
+        working-directory: packages/imaji_install_attribution/example
         shell: bash # -eo pipefail, so a failed build is not hidden by tee
         run: flutter build apk --debug 2>&1 | tee build.log
       - name: Kotlin unit tests
-        working-directory: example/android
+        working-directory: packages/imaji_install_attribution/example/android
         shell: bash
         run: ./gradlew :imaji_install_attribution:testDebugUnitTest --console=plain 2>&1 | tee gradle.log
       - name: Flutter does not name this plugin as applying KGP
@@ -175,15 +189,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Xcode resolves the plugin's Swift package through its real path,
-          # whose identity is the directory name: it must match the package.
-          path: imaji_install_attribution
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
       - name: Build example for the simulator
-        working-directory: imaji_install_attribution/example
+        working-directory: packages/imaji_install_attribution/example
         run: flutter build ios --simulator --debug --no-codesign

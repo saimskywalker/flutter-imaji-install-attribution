@@ -7,14 +7,15 @@ import 'dart:io';
 import 'package:imaji_referrer_builder/imaji_referrer_builder.dart';
 import 'package:test/test.dart';
 
-/// The vectors live at the repository root, next to the plugin's tests.
-const _vectorsPath = '../../test/vectors/referrer_vectors.json';
+/// The vectors live next to the plugin's tests, in the sibling package.
+const _vectorsPath =
+    '../imaji_install_attribution/test/vectors/referrer_vectors.json';
 
 void main() {
   final file = File(_vectorsPath);
   if (!file.existsSync()) {
     // Expected only outside the repository, e.g. from the pub.dev archive,
-    // which does not ship the root test directory. In CI it is a failure:
+    // which does not ship the plugin's test directory. In CI it is a failure:
     // a moved file must not turn the contract test into a skip.
     final inCi = Platform.environment['CI'] == 'true';
     test(
