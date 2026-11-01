@@ -1,9 +1,16 @@
-## Unreleased
+## 0.2.0
 
+- Renamed from `imaji_referrer_builder`. To migrate, replace the dependency
+  (`imaji_referrer_builder: ^0.1.1` → `wherefrom_builder: ^0.2.0`) and the
+  import (`package:imaji_referrer_builder/imaji_referrer_builder.dart` →
+  `package:wherefrom_builder/wherefrom_builder.dart`). No API change. The
+  repository is now `github.com/saimskywalker/wherefrom` and the package
+  lives in `packages/wherefrom_builder`.
 - README: the shared vectors moved with the Flutter plugin to
-  `packages/imaji_install_attribution/test/vectors/referrer_vectors.json`
-  in the repository. Older tags (up to `imaji_referrer_builder-v0.1.1` and
-  `v0.2.1`) keep them at `test/vectors/`. No API change.
+  `packages/wherefrom/test/vectors/referrer_vectors.json` in the
+  repository. Older tags keep them at
+  `packages/imaji_install_attribution/test/vectors/` (`v0.2.2`) or
+  `test/vectors/` (up to `imaji_referrer_builder-v0.1.1` and `v0.2.1`).
 
 ## 0.1.1
 

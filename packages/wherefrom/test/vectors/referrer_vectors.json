@@ -1,5 +1,5 @@
 {
-  "about": "Shared vectors for the deferred-deep-link referrer contract. Builders (any language) must emit referrer_as_play_returns_it and play_store_url byte for byte from campaign + path; the app must route expected_deep_link from referrer_as_play_returns_it. Every refused row must be rejected by the builder. Read by the tests of imaji_install_attribution (parser) and packages/imaji_referrer_builder (builder).",
+  "about": "Shared vectors for the deferred-deep-link referrer contract. Builders (any language) must emit referrer_as_play_returns_it and play_store_url byte for byte from campaign + path; the app must route expected_deep_link from referrer_as_play_returns_it. Every refused row must be rejected by the builder. Read by the tests of wherefrom (parser) and packages/wherefrom_builder (builder).",
   "format_version": 1,
   "package_name": "com.example.app",
   "key": "utm_content",

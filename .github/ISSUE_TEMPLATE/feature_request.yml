@@ -7,8 +7,8 @@ body:
     attributes:
       label: Package
       options:
-        - imaji_install_attribution
-        - imaji_referrer_builder
+        - wherefrom
+        - wherefrom_builder
     validations:
       required: true
   - type: textarea
@@ -32,7 +32,7 @@ body:
         - Android
         - iOS
         - Both
-        - Dart only (imaji_referrer_builder)
+        - Dart only (wherefrom_builder)
   - type: textarea
     id: alternatives
     attributes:

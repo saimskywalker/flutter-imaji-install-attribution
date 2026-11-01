@@ -1,4 +1,4 @@
-// Android side of imaji_install_attribution.
+// Android side of wherefrom.
 //
 // Built on AGP Built-in Kotlin: this file applies the Android library plugin
 // and nothing else. There is deliberately no Kotlin Gradle Plugin line here —
@@ -12,8 +12,8 @@
 // plugin projects that do not declare it, as long as the host has KGP 2.0+ on
 // its classpath (every Flutter 3.44+ app template does).
 
-group = "io.github.saimskywalker.imaji_install_attribution"
-version = "0.2.2"
+group = "io.github.saimskywalker.wherefrom"
+version = "0.3.0"
 
 buildscript {
     repositories {
@@ -38,7 +38,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.saimskywalker.imaji_install_attribution"
+    namespace = "io.github.saimskywalker.wherefrom"
     compileSdk = 36
 
     compileOptions {

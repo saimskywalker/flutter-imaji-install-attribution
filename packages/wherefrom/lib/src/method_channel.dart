@@ -9,11 +9,11 @@ import 'result.dart';
 
 /// The default implementation: talks to the Android and iOS code over a
 /// [MethodChannel].
-class MethodChannelInstallAttribution extends ImajiInstallAttributionPlatform {
+class MethodChannelInstallAttribution extends WherefromPlatform {
   /// The channel shared with the native side.
   @visibleForTesting
   static const MethodChannel channel = MethodChannel(
-    'io.github.saimskywalker/imaji_install_attribution',
+    'io.github.saimskywalker/wherefrom',
   );
 
   @override

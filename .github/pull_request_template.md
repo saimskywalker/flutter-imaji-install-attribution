@@ -4,8 +4,8 @@
 
 ## Checklist
 
-- [ ] In `packages/imaji_install_attribution`: `dart format --output=none --set-exit-if-changed .` and `flutter analyze` are clean, `flutter test` passes
-- [ ] `dart test` passes in `packages/imaji_referrer_builder` if it changed
+- [ ] In `packages/wherefrom`: `dart format --output=none --set-exit-if-changed .` and `flutter analyze` are clean, `flutter test` passes
+- [ ] `dart test` passes in `packages/wherefrom_builder` if it changed
 - [ ] If this fixes a bug: there is a test that fails without the fix
 - [ ] If this touches native code: the example builds (`flutter build apk --debug`, `flutter build ios --simulator --no-codesign`)
 - [ ] User-visible change: `CHANGELOG.md` entry, and README or TESTING.md updated

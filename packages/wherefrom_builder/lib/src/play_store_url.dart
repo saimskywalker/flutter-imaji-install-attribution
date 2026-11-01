@@ -7,10 +7,10 @@ import 'path_check.dart';
 /// value is form-encoded once to build that query string, and the whole
 /// string is encoded once more as the outer parameter — no more. Play strips
 /// the outer layer; the app (`InstallReferrer` in
-/// `imaji_install_attribution`) strips the inner one, exactly once.
+/// `wherefrom`) strips the inner one, exactly once.
 ///
 /// [web], [market] and [encodeReferrer] behave exactly like the class of
-/// the same name in `imaji_install_attribution`. [appendPath],
+/// the same name in `wherefrom`. [appendPath],
 /// [webFromReferrer], [marketFromReferrer], [checkPath] and
 /// [expectedDeepLink] are what a server needs on top.
 abstract final class PlayStoreUrl {

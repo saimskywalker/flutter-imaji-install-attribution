@@ -1,4 +1,4 @@
-package io.github.saimskywalker.imaji_install_attribution
+package io.github.saimskywalker.wherefrom
 
 import android.content.Context
 import android.os.Handler
@@ -14,7 +14,7 @@ import java.util.concurrent.Executors
  * as data (`status: unavailable`) so the Dart side never sees a
  * PlatformException from this plugin.
  */
-class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class WherefromPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var channel: MethodChannel? = null
     private var context: Context? = null
     private var worker: ExecutorService? = null
@@ -43,7 +43,7 @@ class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHan
         val appContext = binding.applicationContext
         context = appContext
         val executor = Executors.newSingleThreadExecutor { runnable ->
-            Thread(runnable, "imaji-install-attribution").apply { isDaemon = true }
+            Thread(runnable, "wherefrom").apply { isDaemon = true }
         }
         worker = executor
         // Record the plugin's first start on this install before anything
@@ -162,7 +162,7 @@ class ImajiInstallAttributionPlugin : FlutterPlugin, MethodChannel.MethodCallHan
     }
 
     private companion object {
-        const val CHANNEL = "io.github.saimskywalker/imaji_install_attribution"
+        const val CHANNEL = "io.github.saimskywalker/wherefrom"
         const val DEFAULT_TIMEOUT_MS = 10_000L
     }
 }

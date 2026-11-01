@@ -8,16 +8,16 @@ import AdServices
 /// `read` returns the AdServices attribution token. Fetching it
 /// needs no App Tracking Transparency prompt. Every failure is sent back as
 /// data (`status: unavailable`) — never as a FlutterError.
-public final class ImajiInstallAttributionPlugin: NSObject, FlutterPlugin {
-  private static let channelName = "io.github.saimskywalker/imaji_install_attribution"
+public final class WherefromPlugin: NSObject, FlutterPlugin {
+  private static let channelName = "io.github.saimskywalker/wherefrom"
 
   /// `attributionToken()` is synchronous and may take a moment; it never runs
   /// on the main thread.
-  private let worker = DispatchQueue(label: "imaji-install-attribution", qos: .utility)
+  private let worker = DispatchQueue(label: "wherefrom", qos: .utility)
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
-    registrar.addMethodCallDelegate(ImajiInstallAttributionPlugin(), channel: channel)
+    registrar.addMethodCallDelegate(WherefromPlugin(), channel: channel)
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -131,6 +131,7 @@ private enum HandledMarker {
         for: .applicationSupportDirectory, in: .userDomainMask
       ).first
     else { return nil }
+    // The package's old name, kept so an upgrade keeps its state.
     return directory.appendingPathComponent("imaji_install_attribution.handled")
   }
 
@@ -177,6 +178,7 @@ private enum FailedReads {
         for: .applicationSupportDirectory, in: .userDomainMask
       ).first
     else { return nil }
+    // The package's old name, kept so an upgrade keeps its state.
     return directory.appendingPathComponent("imaji_install_attribution.failed_reads")
   }
 

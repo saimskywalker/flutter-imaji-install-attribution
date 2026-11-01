@@ -1,14 +1,14 @@
-# imaji_install_attribution
+# wherefrom
 
 A Flutter plugin that tells your app where an install came from (the Google
 Play Install Referrer on Android, the Apple AdServices token on iOS) and
 turns it into the deep link the user wanted before they installed.
 
-[![pub version](https://img.shields.io/pub/v/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution)
-[![pub points](https://img.shields.io/pub/points/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution/score)
-[![pub likes](https://img.shields.io/pub/likes/imaji_install_attribution)](https://pub.dev/packages/imaji_install_attribution/score)
-[![CI](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml)
-[![license: MIT](https://img.shields.io/github/license/saimskywalker/flutter-imaji-install-attribution)](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/LICENSE)
+[![pub version](https://img.shields.io/pub/v/wherefrom)](https://pub.dev/packages/wherefrom)
+[![pub points](https://img.shields.io/pub/points/wherefrom)](https://pub.dev/packages/wherefrom/score)
+[![pub likes](https://img.shields.io/pub/likes/wherefrom)](https://pub.dev/packages/wherefrom/score)
+[![CI](https://github.com/saimskywalker/wherefrom/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/saimskywalker/wherefrom/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/github/license/saimskywalker/wherefrom)](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/LICENSE)
 
 ## Why
 
@@ -23,18 +23,26 @@ turns it into the deep link the user wanted before they installed.
 ## Install
 
 ```bash
-flutter pub add imaji_install_attribution
+flutter pub add wherefrom
 ```
 
 Flutter 3.44+ / Dart 3.12+, Android minSdk 21, iOS 15. Swift Package Manager
 and CocoaPods both work. Nothing to configure on Android or iOS, no R8 keep
 rules, no native code (16 KB page ready); CI builds release versions for both
-stores ([setup details](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/setup.md#release-builds)).
+stores ([setup details](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/doc/setup.md#release-builds)).
+
+## Coming from imaji_install_attribution
+
+This package was `imaji_install_attribution` up to 0.2.2. Replace the
+dependency with `wherefrom: ^0.3.0` and the import with
+`package:wherefrom/wherefrom.dart`; fakes in tests extend
+`WherefromPlatform`. An upgraded app keeps its consume-once state. See the
+[CHANGELOG](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/CHANGELOG.md).
 
 ## Quick start
 
 ```dart
-import 'package:imaji_install_attribution/imaji_install_attribution.dart';
+import 'package:wherefrom/wherefrom.dart';
 
 Future<void> routeFromInstall(GoRouter router) async {
   // null once handled, while another startup path holds the claim, or after
@@ -58,7 +66,7 @@ Failures are typed, never thrown: `InstallAttribution.lastSkipReason` and
 `lastFailure` say why `claimOnce()` returned `null`. To try your routing
 without a Play install, call `InstallAttribution.debugOverride(referrer: ...)`
 in a debug build; see the
-[testing guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/TESTING.md).
+[testing guide](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/TESTING.md).
 
 ## Example output
 
@@ -93,27 +101,27 @@ utm_source=google-play&utm_medium=organic           -> DeepLinkRejected(absent)
 | Consume once | `readOnce()` / `claimOnce()`: first launch only, one claim per process, a persisted retry budget, upgrades skipped |
 | Safe deep links | `deepLink(allow: [...])` decodes exactly once and only returns allowlisted paths |
 | Installer detection | `InstallSource`: Play, Galaxy Store, AppGallery, Amazon, side-load, restore |
-| Link building | `PlayStoreUrl` here, and [`imaji_referrer_builder`](https://pub.dev/packages/imaji_referrer_builder) for pure-Dart backends, both tested against shared JSON vectors |
+| Link building | `PlayStoreUrl` here, and [`wherefrom_builder`](https://pub.dev/packages/wherefrom_builder) for pure-Dart backends, both tested against shared JSON vectors |
 | Built-in Kotlin | No Kotlin Gradle Plugin line, so Flutter's KGP warning never names this plugin |
 | Testable | `debugOverride()` for debug builds, a replaceable platform for unit tests |
 
 ## Documentation
 
-- [API guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/api.md): results, reasons, `InstallReferrer`, `InstallSource`, `PlayStoreUrl`
-- [Consume once](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/consume-once.md): `readOnce()`, upgrade detection, the install-flow recipe, `claimOnce()`
-- [The decoding rule](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/decoding.md) and the language-neutral test vectors
-- [Adopting in an app that already reads the referrer](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/migration.md)
-- [Setup](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/setup.md): requirements, tracking `main`, Android build setup
-- [Testing guide](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/TESTING.md): how to see a real referrer from Play
-- [FAQ](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/doc/faq.md): ATT, iOS deep links, non-goals, alternatives
+- [API guide](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/doc/api.md): results, reasons, `InstallReferrer`, `InstallSource`, `PlayStoreUrl`
+- [Consume once](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/doc/consume-once.md): `readOnce()`, upgrade detection, the install-flow recipe, `claimOnce()`
+- [The decoding rule](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/doc/decoding.md) and the language-neutral test vectors
+- [Adopting in an app that already reads the referrer](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/doc/migration.md)
+- [Setup](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/doc/setup.md): requirements, tracking `main`, Android build setup
+- [Testing guide](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/TESTING.md): how to see a real referrer from Play
+- [FAQ](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/doc/faq.md): ATT, iOS deep links, non-goals, alternatives
 
 ## Links
 
-- [pub.dev page](https://pub.dev/packages/imaji_install_attribution)
-- [API reference](https://pub.dev/documentation/imaji_install_attribution/latest/)
-- [CHANGELOG](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/CHANGELOG.md)
-- [Issues](https://github.com/saimskywalker/flutter-imaji-install-attribution/issues)
-- [Contributing](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/CONTRIBUTING.md)
+- [pub.dev page](https://pub.dev/packages/wherefrom)
+- [API reference](https://pub.dev/documentation/wherefrom/latest/)
+- [CHANGELOG](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/CHANGELOG.md)
+- [Issues](https://github.com/saimskywalker/wherefrom/issues)
+- [Contributing](https://github.com/saimskywalker/wherefrom/blob/main/CONTRIBUTING.md)
 
 ## Trademarks
 
@@ -123,4 +131,4 @@ with, sponsored by or endorsed by Google or Apple.
 
 ## License
 
-MIT © saimskywalker. See [LICENSE](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/LICENSE).
+MIT © saimskywalker. See [LICENSE](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/LICENSE).

@@ -1,4 +1,4 @@
-import 'package:imaji_referrer_builder/imaji_referrer_builder.dart';
+import 'package:wherefrom_builder/wherefrom_builder.dart';
 import 'package:test/test.dart';
 
 const _package = 'com.example.app';

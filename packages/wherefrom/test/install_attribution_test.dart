@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:imaji_install_attribution/imaji_install_attribution.dart';
+import 'package:wherefrom/wherefrom.dart';
 
 /// A scriptable platform: no device, no channel.
-class FakePlatform extends ImajiInstallAttributionPlatform {
+class FakePlatform extends WherefromPlatform {
   FakePlatform(this.onRead);
 
   Future<InstallAttributionResult> Function(Duration timeout) onRead;
@@ -65,7 +65,7 @@ class FakePlatform extends ImajiInstallAttributionPlatform {
   }
 }
 
-class ImplementsInsteadOfExtends implements ImajiInstallAttributionPlatform {
+class ImplementsInsteadOfExtends implements WherefromPlatform {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -80,22 +80,18 @@ void main() {
 
   setUp(() {
     fake = FakePlatform((_) async => _attributed);
-    ImajiInstallAttributionPlatform.instance = fake;
+    WherefromPlatform.instance = fake;
     InstallAttribution.debugClearOverride();
     InstallAttribution.clock = DateTime.now;
   });
 
   test('the default instance talks over the method channel', () {
-    expect(
-      MethodChannelInstallAttribution(),
-      isA<ImajiInstallAttributionPlatform>(),
-    );
+    expect(MethodChannelInstallAttribution(), isA<WherefromPlatform>());
   });
 
   test('a platform must extend, not implement, the interface', () {
     expect(
-      () => ImajiInstallAttributionPlatform.instance =
-          ImplementsInsteadOfExtends(),
+      () => WherefromPlatform.instance = ImplementsInsteadOfExtends(),
       throwsA(isA<AssertionError>()),
     );
   });

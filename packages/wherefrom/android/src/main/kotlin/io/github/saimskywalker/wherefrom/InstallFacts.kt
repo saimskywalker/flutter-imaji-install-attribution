@@ -1,4 +1,4 @@
-package io.github.saimskywalker.imaji_install_attribution
+package io.github.saimskywalker.wherefrom
 
 import android.content.Context
 import android.content.pm.PackageInfo
@@ -34,6 +34,8 @@ internal class FirstSeenRecord(directory: File) {
     }
 
     private companion object {
+        // Named after the package's old name, imaji_install_attribution. Kept
+        // so an app upgrading to wherefrom keeps its state.
         const val FILE_NAME = "imaji_install_attribution.first_seen"
     }
 }

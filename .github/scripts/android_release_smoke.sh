@@ -10,7 +10,7 @@
 set -euo pipefail
 
 apk=$1
-app=io.github.saimskywalker.imaji_install_attribution_example
+app=io.github.saimskywalker.wherefrom_example
 
 adb install -r "$apk" >/dev/null
 adb logcat -c

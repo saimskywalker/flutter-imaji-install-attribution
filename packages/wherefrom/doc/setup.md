@@ -11,14 +11,14 @@ App Tracking Transparency prompt.
 ## Install
 
 ```bash
-flutter pub add imaji_install_attribution
+flutter pub add wherefrom
 ```
 
 or add it to `pubspec.yaml` yourself:
 
 ```yaml
 dependencies:
-  imaji_install_attribution: ^0.2.1
+  wherefrom: ^0.3.0
 ```
 
 ## Tracking `main`
@@ -29,10 +29,10 @@ repository's `main` branch instead. It is not a release: pin a commit with
 
 ```yaml
 dependencies:
-  imaji_install_attribution:
+  wherefrom:
     git:
-      url: https://github.com/saimskywalker/flutter-imaji-install-attribution.git
-      path: packages/imaji_install_attribution
+      url: https://github.com/saimskywalker/wherefrom.git
+      path: packages/wherefrom
       ref: main
 ```
 
@@ -62,7 +62,7 @@ to no module, and Flutter does not warn about it.
 ## Release builds
 
 CI builds the example the way a store receives it, on every push
-([workflow](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml)):
+([workflow](https://github.com/saimskywalker/wherefrom/actions/workflows/ci.yml)):
 
 - **R8.** A release app bundle, shrunk by R8 in full mode (AGP's default),
   is installed on an emulator and must get a typed result from `read()`.

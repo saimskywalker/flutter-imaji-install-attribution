@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Before filing a "no referrer" report, please check
-        [TESTING.md](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/TESTING.md):
+        [TESTING.md](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/TESTING.md):
         a real Play referrer only exists for a build that Google Play installed.
         Replace real referrers, tokens and user identifiers with made-up values.
         Security problems go through the Security tab, not here.
@@ -15,15 +15,15 @@ body:
     attributes:
       label: Package
       options:
-        - imaji_install_attribution
-        - imaji_referrer_builder
+        - wherefrom
+        - wherefrom_builder
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: Package version
-      placeholder: "0.2.1"
+      placeholder: "0.3.0"
     validations:
       required: true
   - type: dropdown
@@ -34,7 +34,7 @@ body:
         - Android
         - iOS
         - Both
-        - Dart only (imaji_referrer_builder)
+        - Dart only (wherefrom_builder)
     validations:
       required: true
   - type: textarea

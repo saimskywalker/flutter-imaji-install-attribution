@@ -1,6 +1,6 @@
 // A command-line link builder: prints the Play Store links for a few
 // targets, as a redirect server or a campaign tool would build them.
-import 'package:imaji_referrer_builder/imaji_referrer_builder.dart';
+import 'package:wherefrom_builder/wherefrom_builder.dart';
 
 /// The campaign string as whoever runs campaigns configured it.
 const campaign = 'utm_source=share&utm_medium=social&utm_campaign=spring';

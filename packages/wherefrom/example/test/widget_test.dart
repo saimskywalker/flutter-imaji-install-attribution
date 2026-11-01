@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:imaji_install_attribution/imaji_install_attribution.dart';
-import 'package:imaji_install_attribution_example/main.dart';
+import 'package:wherefrom/wherefrom.dart';
+import 'package:wherefrom_example/main.dart';
 
-class _FakePlatform extends ImajiInstallAttributionPlatform {
+class _FakePlatform extends WherefromPlatform {
   bool handled = false;
 
   @override
@@ -27,7 +27,7 @@ class _FakePlatform extends ImajiInstallAttributionPlatform {
 
 void main() {
   testWidgets('shows the attributed result and its deep link', (tester) async {
-    ImajiInstallAttributionPlatform.instance = _FakePlatform();
+    WherefromPlatform.instance = _FakePlatform();
     await tester.pumpWidget(const ExampleApp());
     await tester.pumpAndSettle();
 

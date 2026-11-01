@@ -1,5 +1,20 @@
-## Unreleased
+## 0.3.0
 
+- Renamed from `imaji_install_attribution`. To migrate, replace the
+  dependency (`imaji_install_attribution: ^0.2.2` → `wherefrom: ^0.3.0`) and
+  the import (`package:imaji_install_attribution/imaji_install_attribution.dart`
+  → `package:wherefrom/wherefrom.dart`). Test fakes extend
+  `WherefromPlatform`, formerly `ImajiInstallAttributionPlatform`. The method
+  channel is now `io.github.saimskywalker/wherefrom`, so the old and new
+  packages never share a native side if both end up in one app. No other
+  API change. The consume-once marker, the failed-read count and the
+  first-start record keep their file names, so an upgraded app keeps its
+  state.
+- Native names follow: Android package `io.github.saimskywalker.wherefrom`,
+  plugin class `WherefromPlugin` on Android and iOS, CocoaPods pod and
+  Swift package `wherefrom`. The repository is now
+  `github.com/saimskywalker/wherefrom` and the plugin lives in
+  `packages/wherefrom`.
 - CI builds release versions: an R8-shrunk Android app bundle that runs on
   an emulator, and iOS device builds with Swift Package Manager and with
   CocoaPods. `doc/merged-manifest.snapshot.xml` lists what the plugin adds

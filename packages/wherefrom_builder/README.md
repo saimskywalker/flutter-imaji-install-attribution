@@ -1,16 +1,16 @@
-# imaji_referrer_builder — build Play install-referrer links on a server
+# wherefrom_builder — build Play install-referrer links on a server
 
-[![CI](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml/badge.svg)](https://github.com/saimskywalker/flutter-imaji-install-attribution/actions/workflows/ci.yml)
+[![CI](https://github.com/saimskywalker/wherefrom/actions/workflows/ci.yml/badge.svg)](https://github.com/saimskywalker/wherefrom/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Pure Dart, **no Flutter, no runtime dependencies**. Builds the Google Play
 `referrer=` value and store URL for a deferred deep link — the **builder**
 half of the contract whose **app** half is `InstallReferrer` in the Flutter
 plugin
-[`imaji_install_attribution`](https://pub.dev/packages/imaji_install_attribution).
+[`wherefrom`](https://pub.dev/packages/wherefrom).
 
 ```dart
-import 'package:imaji_referrer_builder/imaji_referrer_builder.dart';
+import 'package:wherefrom_builder/wherefrom_builder.dart';
 
 final referrer = PlayStoreUrl.appendPath(
   'utm_source=share&utm_medium=social&utm_campaign=spring', // as configured
@@ -47,19 +47,25 @@ against the same vector file as the app-side parser.
 ## Install
 
 ```bash
-dart pub add imaji_referrer_builder
+dart pub add wherefrom_builder
 ```
 
 To track `main` before a release, or to pin a commit:
 
 ```yaml
 dependencies:
-  imaji_referrer_builder:
+  wherefrom_builder:
     git:
-      url: https://github.com/saimskywalker/flutter-imaji-install-attribution
-      path: packages/imaji_referrer_builder
+      url: https://github.com/saimskywalker/wherefrom
+      path: packages/wherefrom_builder
       ref: main # or a commit SHA
 ```
+
+## Coming from imaji_referrer_builder
+
+This package was `imaji_referrer_builder` up to 0.1.1. Replace the
+dependency with `wherefrom_builder: ^0.2.0` and the import with
+`package:wherefrom_builder/wherefrom_builder.dart`. Nothing else changed.
 
 ## The five rules
 
@@ -137,14 +143,17 @@ app: one decode        /items/a b  ->  routes /items/a%20b
 
 ## Test your builder against the shared vectors
 
-[`test/vectors/referrer_vectors.json`](https://github.com/saimskywalker/flutter-imaji-install-attribution/blob/main/packages/imaji_install_attribution/test/vectors/referrer_vectors.json)
+[`test/vectors/referrer_vectors.json`](https://github.com/saimskywalker/wherefrom/blob/main/packages/wherefrom/test/vectors/referrer_vectors.json)
 holds rows of `campaign` + `path` → `referrer_as_play_returns_it`,
 `play_url_referrer_param`, `play_store_url` and `expected_deep_link`, plus
 `refused` rows a builder must reject. This package's tests and the Flutter
 plugin's tests both read it, so the builder and the parser cannot drift
 apart. A builder in any other language can pin the same file — fetch
-`https://raw.githubusercontent.com/saimskywalker/flutter-imaji-install-attribution/<tag-or-commit>/packages/imaji_install_attribution/test/vectors/referrer_vectors.json`
-in its tests. A Python builder that passes every row:
+`https://raw.githubusercontent.com/saimskywalker/wherefrom/<tag-or-commit>/packages/wherefrom/test/vectors/referrer_vectors.json`
+in its tests. Tags from before the rename keep it elsewhere:
+`packages/imaji_install_attribution/test/vectors/` at v0.2.2, and
+`test/vectors/` at v0.2.1, imaji_referrer_builder-v0.1.1 and older. A
+Python builder that passes every row:
 
 ```python
 import json

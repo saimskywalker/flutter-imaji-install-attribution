@@ -129,7 +129,7 @@ abstract final class InstallAttribution {
   static Future<InstallAttributionResult> _read(Duration timeout) async {
     final effective = timeout <= Duration.zero ? defaultTimeout : timeout;
     try {
-      return await ImajiInstallAttributionPlatform.instance
+      return await WherefromPlatform.instance
           .read(timeout: effective)
           // Re-type: an implementation may hand back a Future of a subtype
           // (`Future<Attributed>`), whose `timeout` would reject our
@@ -154,7 +154,7 @@ abstract final class InstallAttribution {
   /// on iOS. Never throws.
   static Future<InstallSource?> installSource() async {
     try {
-      return await ImajiInstallAttributionPlatform.instance.installSource();
+      return await WherefromPlatform.instance.installSource();
     } on Object {
       return null;
     }
@@ -346,7 +346,7 @@ abstract final class InstallAttribution {
 
   static Future<int?> _failedReads() async {
     try {
-      return await ImajiInstallAttributionPlatform.instance.failedReads();
+      return await WherefromPlatform.instance.failedReads();
     } on Object {
       return null;
     }
@@ -354,7 +354,7 @@ abstract final class InstallAttribution {
 
   static Future<int?> _recordFailedRead() async {
     try {
-      return await ImajiInstallAttributionPlatform.instance.recordFailedRead();
+      return await WherefromPlatform.instance.recordFailedRead();
     } on Object {
       return null;
     }
@@ -399,7 +399,7 @@ abstract final class InstallAttribution {
   /// and when it could not be read. Never throws.
   static Future<InstallFacts?> installFacts() async {
     try {
-      return await ImajiInstallAttributionPlatform.instance.installFacts();
+      return await WherefromPlatform.instance.installFacts();
     } on Object {
       return null;
     }
@@ -409,7 +409,7 @@ abstract final class InstallAttribution {
   /// an unreadable marker counts as not handled.
   static Future<bool> isHandled() async {
     try {
-      return await ImajiInstallAttributionPlatform.instance.isHandled();
+      return await WherefromPlatform.instance.isHandled();
     } on Object {
       return false;
     }
@@ -419,7 +419,7 @@ abstract final class InstallAttribution {
   /// `null` from now on. Returns `false` if the marker could not be written.
   static Future<bool> markHandled() async {
     try {
-      return await ImajiInstallAttributionPlatform.instance.markHandled();
+      return await WherefromPlatform.instance.markHandled();
     } on Object {
       return false;
     }
@@ -429,7 +429,7 @@ abstract final class InstallAttribution {
   /// kept by [claimOnce]. Meant for tests and debug menus.
   static Future<bool> clearHandled() async {
     try {
-      return await ImajiInstallAttributionPlatform.instance.clearHandled();
+      return await WherefromPlatform.instance.clearHandled();
     } on Object {
       return false;
     }

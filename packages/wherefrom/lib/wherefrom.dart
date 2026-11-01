@@ -6,7 +6,7 @@
 /// [Unavailable] — never an exception.
 ///
 /// ```dart
-/// import 'package:imaji_install_attribution/imaji_install_attribution.dart';
+/// import 'package:wherefrom/wherefrom.dart';
 ///
 /// final result = await InstallAttribution.read();
 /// if (result case Attributed(:final referrer?)) {

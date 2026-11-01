@@ -1,7 +1,7 @@
 # Releasing
 
-The checklist for every release of `imaji_install_attribution`, which lives
-in `packages/imaji_install_attribution`; paths below are relative to that
+The checklist for every release of `wherefrom`, which lives
+in `packages/wherefrom`; paths below are relative to that
 folder. Copy it into the release pull request and tick it there. Steps
 marked **(owner)** need repository or pub.dev rights.
 
@@ -13,7 +13,7 @@ documentation, a minor for features while the package is `0.x`.
 - [ ] The version is the same in all three places:
   - `pubspec.yaml` → `version:`
   - `android/build.gradle.kts` → `version =`
-  - `ios/imaji_install_attribution.podspec` → `s.version`
+  - `ios/wherefrom.podspec` → `s.version`
 - [ ] `CHANGELOG.md` has a `## <version>` entry at the top, written for
       users of the package.
 - [ ] README and TESTING.md describe the new behaviour; any version
@@ -27,7 +27,7 @@ documentation, a minor for features while the package is `0.x`.
 
       Keep the list of private terms (employer, product, people, hostnames,
       emails) outside the repository.
-- [ ] `dart pub publish --dry-run` in `packages/imaji_install_attribution`
+- [ ] `dart pub publish --dry-run` in `packages/wherefrom`
       reports 0 warnings and the archive lists no `packages/` folder (CI
       runs it on every push).
 - [ ] CI is green: `Dart (format, analyze, test)`,
@@ -44,12 +44,12 @@ documentation, a minor for features while the package is `0.x`.
       `git tag v<version> && git push origin v<version>`
 - [ ] **(owner)** GitHub release from the tag, notes copied from
       `CHANGELOG.md`.
-- [ ] **(owner)** `dart pub publish` in `packages/imaji_install_attribution`
+- [ ] **(owner)** `dart pub publish` in `packages/wherefrom`
       from the tagged commit (after one more `--dry-run`).
 - [ ] Check the pub.dev page: the new version is listed, platforms Android
       and iOS, topics, 160/160 points, and the README badges and links
       render (relative links resolve against the `repository:` URL,
-      `tree/main/packages/imaji_install_attribution`).
+      `tree/main/packages/wherefrom`).
 
 ## 3. When the release changes native code
 

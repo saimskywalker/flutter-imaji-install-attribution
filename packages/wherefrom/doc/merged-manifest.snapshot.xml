@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  What imaji_install_attribution adds to an app's merged AndroidManifest.xml
+  What wherefrom adds to an app's merged AndroidManifest.xml
   in a release build. Generated from the example app by
   .github/scripts/merged_manifest_snapshot.py; CI fails when the build
   differs. Regenerate with that script's update flag after a release build.
@@ -8,7 +8,7 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <queries>
-        <!-- from :imaji_install_attribution -->
+        <!-- from :wherefrom -->
         <package android:name="com.android.vending" />
     </queries>
     <!-- from com.android.installreferrer:installreferrer -->

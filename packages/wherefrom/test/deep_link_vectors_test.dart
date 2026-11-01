@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:imaji_install_attribution/imaji_install_attribution.dart';
+import 'package:wherefrom/wherefrom.dart';
 
 void main() {
   final doc =

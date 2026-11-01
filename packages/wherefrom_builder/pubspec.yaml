@@ -1,10 +1,10 @@
-name: imaji_referrer_builder
+name: wherefrom_builder
 description: >-
   Pure Dart: builds Google Play install-referrer strings and store URLs on a
   server, for deferred deep links.
-version: 0.1.1
-repository: https://github.com/saimskywalker/flutter-imaji-install-attribution/tree/main/packages/imaji_referrer_builder
-issue_tracker: https://github.com/saimskywalker/flutter-imaji-install-attribution/issues
+version: 0.2.0
+repository: https://github.com/saimskywalker/wherefrom/tree/main/packages/wherefrom_builder
+issue_tracker: https://github.com/saimskywalker/wherefrom/issues
 topics:
   - deep-linking
   - attribution

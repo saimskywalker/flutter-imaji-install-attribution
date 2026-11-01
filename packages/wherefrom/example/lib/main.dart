@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:imaji_install_attribution/imaji_install_attribution.dart';
+import 'package:wherefrom/wherefrom.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -173,8 +173,7 @@ class _AttributionPageState extends State<AttributionPage> {
             _InfoTile(
               title: 'Play URL that would produce the first simulation',
               value: PlayStoreUrl.web(
-                packageName:
-                    'io.github.saimskywalker.imaji_install_attribution_example',
+                packageName: 'io.github.saimskywalker.wherefrom_example',
                 referrer: const {
                   'utm_source': 'newsletter',
                   'utm_medium': 'email',

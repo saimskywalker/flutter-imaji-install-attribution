@@ -2,7 +2,7 @@
 ///
 /// The builder is never more permissive than the app's
 /// `InstallReferrer.deepLink(allow: …, hosts: …)` in
-/// `imaji_install_attribution`: every path the app would drop (so the
+/// `wherefrom`: every path the app would drop (so the
 /// install would land on the home screen) is refused. It is stricter in two
 /// places, because emitting such a path is a bug even when the app copes:
 /// leading or trailing whitespace, which the app trims

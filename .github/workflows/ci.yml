@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: packages/imaji_install_attribution
+        working-directory: packages/wherefrom
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -40,7 +40,7 @@ jobs:
       - name: Test
         run: flutter test
       - name: Example widget test
-        working-directory: packages/imaji_install_attribution/example
+        working-directory: packages/wherefrom/example
         run: flutter test
       - name: Package description is 60-180 characters
         run: |
@@ -84,7 +84,7 @@ jobs:
 
   referrer_builder:
     # Plain Dart SDK, no Flutter: proves a backend can depend on the builder.
-    name: imaji_referrer_builder (Dart ${{ matrix.sdk }})
+    name: wherefrom_builder (Dart ${{ matrix.sdk }})
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -93,7 +93,7 @@ jobs:
         sdk: ["3.8.0", stable] # the pubspec's lower bound, and the latest
     defaults:
       run:
-        working-directory: packages/imaji_referrer_builder
+        working-directory: packages/wherefrom_builder
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
@@ -104,9 +104,9 @@ jobs:
         run: |
           # `dart pub deps --no-dev` lists the SDK, then the package; any
           # further line is a runtime dependency.
-          deps=$(dart pub deps --no-dev --style=list | grep -vE '^(Dart SDK|Flutter SDK|imaji_referrer_builder) |^ *$' || true)
+          deps=$(dart pub deps --no-dev --style=list | grep -vE '^(Dart SDK|Flutter SDK|wherefrom_builder) |^ *$' || true)
           if [ -n "$deps" ]; then
-            echo "::error::imaji_referrer_builder must have no runtime dependencies"
+            echo "::error::wherefrom_builder must have no runtime dependencies"
             echo "$deps"
             exit 1
           fi
@@ -118,7 +118,7 @@ jobs:
       - name: Test (including the shared vectors)
         run: dart test
       - name: Example runs
-        run: dart run example/imaji_referrer_builder_example.dart
+        run: dart run example/wherefrom_builder_example.dart
       - name: Package description is 60-180 characters
         run: |
           python3 - pubspec.yaml <<'PY'
@@ -151,7 +151,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: packages/imaji_install_attribution
+        working-directory: packages/wherefrom
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -165,13 +165,13 @@ jobs:
           cache: true
       - uses: gradle/actions/setup-gradle@v4
       - name: Build example APK (android.builtInKotlin=true)
-        working-directory: packages/imaji_install_attribution/example
+        working-directory: packages/wherefrom/example
         shell: bash # -eo pipefail, so a failed build is not hidden by tee
         run: flutter build apk --debug 2>&1 | tee build.log
       - name: Kotlin unit tests
-        working-directory: packages/imaji_install_attribution/example/android
+        working-directory: packages/wherefrom/example/android
         shell: bash
-        run: ./gradlew :imaji_install_attribution:testDebugUnitTest --console=plain 2>&1 | tee gradle.log
+        run: ./gradlew :wherefrom:testDebugUnitTest --console=plain 2>&1 | tee gradle.log
       - name: Flutter does not name this plugin as applying KGP
         # The warning is printed by Flutter's Gradle plugin; plain Gradle
         # output shows it reliably, while `flutter build` may filter it.
@@ -190,7 +190,7 @@ jobs:
     timeout-minutes: 40
     defaults:
       run:
-        working-directory: packages/imaji_install_attribution/example
+        working-directory: packages/wherefrom/example
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -235,7 +235,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: .github/scripts/android_release_smoke.sh packages/imaji_install_attribution/example/build/app/outputs/flutter-apk/app-release.apk
+          script: .github/scripts/android_release_smoke.sh packages/wherefrom/example/build/app/outputs/flutter-apk/app-release.apk
 
   ios:
     name: iOS (example build)
@@ -251,7 +251,7 @@ jobs:
           channel: stable
           cache: true
       - name: Build example for the simulator
-        working-directory: packages/imaji_install_attribution/example
+        working-directory: packages/wherefrom/example
         run: flutter build ios --simulator --debug --no-codesign
 
   ios_release:
@@ -272,7 +272,7 @@ jobs:
           cache: true
       - name: Build the example for devices
         if: matrix.dependency_manager == 'SwiftPM'
-        working-directory: packages/imaji_install_attribution/example
+        working-directory: packages/wherefrom/example
         run: |
           flutter build ios --release --no-codesign
           echo "APP=$PWD/build/ios/iphoneos/Runner.app" >> "$GITHUB_ENV"
@@ -284,11 +284,11 @@ jobs:
           flutter config --no-enable-swift-package-manager
           host="$RUNNER_TEMP/pods_host"
           flutter create --platforms=ios --org com.example --project-name pods_host "$host"
-          cp packages/imaji_install_attribution/example/lib/main.dart "$host/lib/main.dart"
+          cp packages/wherefrom/example/lib/main.dart "$host/lib/main.dart"
           cd "$host"
-          flutter pub add imaji_install_attribution --path "$GITHUB_WORKSPACE/packages/imaji_install_attribution"
+          flutter pub add wherefrom --path "$GITHUB_WORKSPACE/packages/wherefrom"
           flutter build ios --release --no-codesign
-          if ! grep -q '^  - imaji_install_attribution ' ios/Podfile.lock; then
+          if ! grep -q '^  - wherefrom ' ios/Podfile.lock; then
             echo "::error::the plugin was not installed through CocoaPods"
             exit 1
           fi

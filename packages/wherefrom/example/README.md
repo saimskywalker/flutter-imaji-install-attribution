@@ -1,7 +1,7 @@
-# imaji_install_attribution example
+# wherefrom example
 
 A Flutter app that shows every state of
-[`imaji_install_attribution`](../README.md): `Attributed`, `Organic` and
+[`wherefrom`](../README.md): `Attributed`, `Organic` and
 `Unavailable(reason)`, the install source, the deep-link helper with an
 allowlist, and the consume-once store.
 

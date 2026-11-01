@@ -2,7 +2,7 @@
 
 The question everyone asks about install referrers is not "how do I read it"
 but "how do I see a real one before I ship". This guide is the answer for
-`imaji_install_attribution`, on Android and iOS.
+`wherefrom`, on Android and iOS.
 
 **Short version:** a *real* Play referrer only exists for a build that Google
 Play itself installed. Everything else — `flutter run`, a side-loaded APK, an
@@ -194,7 +194,7 @@ the Play Store app directly.
 Install a fake platform; no device or channel needed:
 
 ```dart
-class FakeAttribution extends ImajiInstallAttributionPlatform {
+class FakeAttribution extends WherefromPlatform {
   @override
   Future<InstallAttributionResult> read({required Duration timeout}) async =>
       Attributed(
@@ -228,7 +228,7 @@ class FakeAttribution extends ImajiInstallAttributionPlatform {
   Future<InstallFacts?> installFacts() async => null;
 }
 
-setUp(() => ImajiInstallAttributionPlatform.instance = FakeAttribution());
+setUp(() => WherefromPlatform.instance = FakeAttribution());
 ```
 
 `claimOnce()`'s one-claim lock is process-wide. A test that takes a claim

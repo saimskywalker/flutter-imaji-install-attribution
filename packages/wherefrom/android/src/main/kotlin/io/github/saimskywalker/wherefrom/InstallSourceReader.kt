@@ -1,4 +1,4 @@
-package io.github.saimskywalker.imaji_install_attribution
+package io.github.saimskywalker.wherefrom
 
 import android.content.Context
 import android.content.pm.PackageManager

@@ -4,12 +4,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:imaji_referrer_builder/imaji_referrer_builder.dart';
+import 'package:wherefrom_builder/wherefrom_builder.dart';
 import 'package:test/test.dart';
 
 /// The vectors live next to the plugin's tests, in the sibling package.
-const _vectorsPath =
-    '../imaji_install_attribution/test/vectors/referrer_vectors.json';
+const _vectorsPath = '../wherefrom/test/vectors/referrer_vectors.json';
 
 void main() {
   final file = File(_vectorsPath);

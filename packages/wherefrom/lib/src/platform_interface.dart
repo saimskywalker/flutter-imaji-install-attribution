@@ -10,7 +10,7 @@ import 'result.dart';
 /// Apps and tests can install a fake without a device:
 ///
 /// ```dart
-/// class FakeAttribution extends ImajiInstallAttributionPlatform {
+/// class FakeAttribution extends WherefromPlatform {
 ///   @override
 ///   Future<InstallAttributionResult> read({required Duration timeout}) async =>
 ///       Attributed(
@@ -20,24 +20,23 @@ import 'result.dart';
 ///   // ...
 /// }
 ///
-/// ImajiInstallAttributionPlatform.instance = FakeAttribution();
+/// WherefromPlatform.instance = FakeAttribution();
 /// ```
 ///
 /// Extend this class (do not `implement` it) so new methods added in minor
 /// versions get a default.
-abstract class ImajiInstallAttributionPlatform extends PlatformInterface {
+abstract class WherefromPlatform extends PlatformInterface {
   /// Constructs a platform implementation.
-  ImajiInstallAttributionPlatform() : super(token: _token);
+  WherefromPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static ImajiInstallAttributionPlatform _instance =
-      MethodChannelInstallAttribution();
+  static WherefromPlatform _instance = MethodChannelInstallAttribution();
 
   /// The active implementation. Defaults to [MethodChannelInstallAttribution].
-  static ImajiInstallAttributionPlatform get instance => _instance;
+  static WherefromPlatform get instance => _instance;
 
-  static set instance(ImajiInstallAttributionPlatform instance) {
+  static set instance(WherefromPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }

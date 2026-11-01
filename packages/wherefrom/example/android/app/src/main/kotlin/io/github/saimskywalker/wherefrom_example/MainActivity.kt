@@ -1,4 +1,4 @@
-package io.github.saimskywalker.imaji_install_attribution_example
+package io.github.saimskywalker.wherefrom_example
 
 import io.flutter.embedding.android.FlutterActivity
 

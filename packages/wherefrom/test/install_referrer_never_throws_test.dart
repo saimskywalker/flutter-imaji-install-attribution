@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:imaji_install_attribution/imaji_install_attribution.dart';
+import 'package:wherefrom/wherefrom.dart';
 
 /// The referrer is input anyone can craft: a Play URL can carry any
 /// `referrer=`. Nothing on [InstallReferrer] may throw for it, and a link it

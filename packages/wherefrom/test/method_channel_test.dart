@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:imaji_install_attribution/imaji_install_attribution.dart';
+import 'package:wherefrom/wherefrom.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -254,7 +254,7 @@ void main() {
       answer((_) => null); // iOS could not store it.
       expect(platform.recordFailedRead(), throwsStateError);
       // The public API turns that into "unknown", not a throw.
-      ImajiInstallAttributionPlatform.instance = platform;
+      WherefromPlatform.instance = platform;
       expect(await InstallAttribution.failedReads(), isNull);
     });
 

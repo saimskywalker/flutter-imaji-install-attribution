@@ -5,16 +5,16 @@ Issues and pull requests are welcome, especially device reports
 vendor and Play Store version.
 
 The repository holds two packages: the Flutter plugin in
-`packages/imaji_install_attribution` and the pure-Dart builder in
-`packages/imaji_referrer_builder`. Run the checks CI runs for the plugin:
+`packages/wherefrom` and the pure-Dart builder in
+`packages/wherefrom_builder`. Run the checks CI runs for the plugin:
 
 ```bash
-cd packages/imaji_install_attribution
+cd packages/wherefrom
 dart format --set-exit-if-changed .
 flutter analyze
 flutter test
 (cd example && flutter build apk --debug)
-(cd example/android && ./gradlew :imaji_install_attribution:testDebugUnitTest)
+(cd example/android && ./gradlew :wherefrom:testDebugUnitTest)
 (cd example && flutter build ios --simulator --debug --no-codesign)
 ```
 
@@ -22,33 +22,33 @@ CI also builds release versions. To run the Android checks locally (from the
 repository root, with an emulator running for the last one):
 
 ```bash
-(cd packages/imaji_install_attribution/example && flutter build appbundle --release && flutter build apk --release)
+(cd packages/wherefrom/example && flutter build appbundle --release && flutter build apk --release)
 python3 .github/scripts/merged_manifest_snapshot.py   # --update to accept a manifest change
-python3 .github/scripts/check_native_libs.py packages/imaji_install_attribution/example/build/app/outputs/bundle/release/app-release.aab
-.github/scripts/android_release_smoke.sh packages/imaji_install_attribution/example/build/app/outputs/flutter-apk/app-release.apk
+python3 .github/scripts/check_native_libs.py packages/wherefrom/example/build/app/outputs/bundle/release/app-release.aab
+.github/scripts/android_release_smoke.sh packages/wherefrom/example/build/app/outputs/flutter-apk/app-release.apk
 ```
 
 and on iOS:
 
 ```bash
-(cd packages/imaji_install_attribution/example && flutter build ios --release --no-codesign)
-.github/scripts/check_ios_privacy_manifest.sh packages/imaji_install_attribution/example/build/ios/iphoneos/Runner.app
+(cd packages/wherefrom/example && flutter build ios --release --no-codesign)
+.github/scripts/check_ios_privacy_manifest.sh packages/wherefrom/example/build/ios/iphoneos/Runner.app
 ```
 
-The pure-Dart builder in `packages/imaji_referrer_builder` has its own CI job
+The pure-Dart builder in `packages/wherefrom_builder` has its own CI job
 (Dart 3.8.0 and stable):
 
 ```bash
-cd packages/imaji_referrer_builder
+cd packages/wherefrom_builder
 dart pub get
 dart format --output=none --set-exit-if-changed .
 dart analyze --fatal-infos
 dart test
-dart run example/imaji_referrer_builder_example.dart
+dart run example/wherefrom_builder_example.dart
 ```
 
 To see a real referrer on a device, follow
-[TESTING.md](packages/imaji_install_attribution/TESTING.md).
+[TESTING.md](packages/wherefrom/TESTING.md).
 
 ## How changes land
 
@@ -62,7 +62,7 @@ time on it.
 - **No Kotlin Gradle Plugin.** The Android plugin uses AGP built-in Kotlin;
   CI fails if the plugin's `android/build.gradle.kts` references KGP.
 - **Shared vectors.** Parsing and building rules live in
-  `packages/imaji_install_attribution/test/vectors/*.json` and are read by
+  `packages/wherefrom/test/vectors/*.json` and are read by
   both packages, so the plugin and the builder cannot drift apart. A change
   in behaviour is a change to the vectors.
 - **Never throw on input.** Referrer and deep link parsing return a typed

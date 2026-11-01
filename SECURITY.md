@@ -6,8 +6,8 @@ Fixes land on the latest minor release of each package in this repository.
 
 | Package | Supported |
 |---|---|
-| `imaji_install_attribution` | 0.2.x |
-| `imaji_referrer_builder` | 0.1.x |
+| `wherefrom` | 0.3.x |
+| `wherefrom_builder` | 0.2.x |
 
 Older versions do not get backports. Upgrade to the latest release first.
 

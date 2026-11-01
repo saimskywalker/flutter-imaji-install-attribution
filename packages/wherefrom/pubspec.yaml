@@ -1,11 +1,11 @@
-name: imaji_install_attribution
+name: wherefrom
 description: >-
   Flutter plugin: Play Install Referrer (Android) and Apple AdServices (iOS)
   for install attribution and deferred deep links, with typed results and
   first-launch-only reads.
-version: 0.2.2
-repository: https://github.com/saimskywalker/flutter-imaji-install-attribution/tree/main/packages/imaji_install_attribution
-issue_tracker: https://github.com/saimskywalker/flutter-imaji-install-attribution/issues
+version: 0.3.0
+repository: https://github.com/saimskywalker/wherefrom/tree/main/packages/wherefrom
+issue_tracker: https://github.com/saimskywalker/wherefrom/issues
 topics:
   - flutter
   - android
@@ -31,7 +31,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: io.github.saimskywalker.imaji_install_attribution
-        pluginClass: ImajiInstallAttributionPlugin
+        package: io.github.saimskywalker.wherefrom
+        pluginClass: WherefromPlugin
       ios:
-        pluginClass: ImajiInstallAttributionPlugin
+        pluginClass: WherefromPlugin

@@ -1,4 +1,4 @@
-package io.github.saimskywalker.imaji_install_attribution
+package io.github.saimskywalker.wherefrom
 
 import java.io.File
 
@@ -31,6 +31,8 @@ internal class FailedReadCounter(directory: File) {
     }
 
     private companion object {
+        // Named after the package's old name, imaji_install_attribution. Kept
+        // so an app upgrading to wherefrom keeps its state.
         const val FILE_NAME = "imaji_install_attribution.failed_reads"
     }
 }
