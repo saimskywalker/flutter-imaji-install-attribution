@@ -94,3 +94,8 @@ with a type prefix (`docs: ...`, `fix: ...`). Add an entry to the package's
 
 If this plugin saved you a day of chasing referrers, a star on the
 repository helps other Flutter developers find it.
+
+## Stay in touch
+
+Don't forget to follow [@saimskywalker](https://github.com/saimskywalker) on
+GitHub to see new releases and other open-source projects as they come out.
