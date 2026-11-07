@@ -3,6 +3,8 @@
 [![CI](https://github.com/saimskywalker/wherefrom/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/saimskywalker/wherefrom/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/github/license/saimskywalker/wherefrom)](LICENSE)
 
+**Status:** maintained. Corrections and maintenance releases continue; new features are on hold.
+
 Install attribution and deferred deep links for Flutter apps, in two
 packages that share one set of test vectors.
 
